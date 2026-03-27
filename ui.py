@@ -1,13 +1,26 @@
 from __future__ import annotations
 
+import json
 import os
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import requests
 import streamlit as st
 
+from financial_xai.history import read_json, utc_now_iso, write_json
 
 BACKEND_URL = os.getenv("FINANCIAL_XAI_BACKEND_URL", "http://127.0.0.1:5000/chat")
+BASE_DIR = Path(__file__).resolve().parent
+CHAT_HISTORY_DIR = Path(os.getenv("FINANCIAL_XAI_CHAT_HISTORY_DIR", str(BASE_DIR / "data" / "chat_history")))
+LATEST_HISTORY_PATH = CHAT_HISTORY_DIR / "streamlit_latest.json"
+CHAT_HISTORY_AUTOSAVE = os.getenv("FINANCIAL_XAI_CHAT_HISTORY_AUTOSAVE", "1").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 EXAMPLE_PROMPTS = [
     "My income is 85000, credit score is 742, loan amount is 1200000, term is 5 years, existing EMI is 12000",
     "Calculate compound interest on 150000 at 10% for 5 years compounded quarterly",
@@ -21,16 +34,40 @@ st.set_page_config(page_title="Financial Explainable AI Chatbot", page_icon=":mo
 st.title("Financial Explainable AI Chatbot")
 st.caption("Flask backend plus Streamlit frontend with finance calculators, loan intelligence, and live market hooks.")
 
+loaded_history: dict[str, Any] | None = None
+if CHAT_HISTORY_AUTOSAVE:
+    loaded_history = read_json(LATEST_HISTORY_PATH)
+
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    messages = loaded_history.get("messages") if loaded_history else []
+    st.session_state.messages = messages if isinstance(messages, list) else []
 if "conversation" not in st.session_state:
-    st.session_state.conversation = None
+    st.session_state.conversation = loaded_history.get("conversation") if loaded_history else None
 if "draft" not in st.session_state:
     st.session_state.draft = ""
 
 
 def set_prompt(prompt: str) -> None:
     st.session_state.draft = prompt
+
+
+def export_chat_history() -> dict[str, Any]:
+    return {
+        "saved_at": utc_now_iso(),
+        "backend_url": BACKEND_URL,
+        "conversation": st.session_state.conversation,
+        "messages": st.session_state.messages,
+    }
+
+
+def autosave_chat_history() -> None:
+    if not CHAT_HISTORY_AUTOSAVE:
+        return
+    try:
+        write_json(LATEST_HISTORY_PATH, export_chat_history())
+    except OSError:
+        # Never break the chat UI because the filesystem is not writable.
+        return
 
 
 def render_bot_payload(payload: dict[str, Any]) -> None:
@@ -106,6 +143,25 @@ def render_bot_payload(payload: dict[str, Any]) -> None:
 with st.sidebar:
     st.subheader("Backend")
     st.code(BACKEND_URL)
+    st.subheader("History")
+    st.caption(f"Autosave: {'on' if CHAT_HISTORY_AUTOSAVE else 'off'}")
+
+    if st.button("Save snapshot", use_container_width=True):
+        snapshot_path = CHAT_HISTORY_DIR / f"chat_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        try:
+            write_json(snapshot_path, export_chat_history())
+            st.success(f"Saved to {snapshot_path}")
+        except OSError as exc:
+            st.error(f"Failed to save history: {exc}")
+
+    st.download_button(
+        "Download JSON",
+        data=json.dumps(export_chat_history(), ensure_ascii=False, indent=2),
+        file_name="financial_xai_chat_history.json",
+        mime="application/json",
+        use_container_width=True,
+    )
+
     st.subheader("Examples")
     for prompt in EXAMPLE_PROMPTS:
         st.button(prompt, use_container_width=True, on_click=set_prompt, args=(prompt,))
@@ -113,6 +169,7 @@ with st.sidebar:
         st.session_state.messages = []
         st.session_state.conversation = None
         st.session_state.draft = ""
+        autosave_chat_history()
         st.rerun()
 
 for message in st.session_state.messages:
@@ -154,5 +211,6 @@ if user_input:
         }
 
     st.session_state.messages.append({"role": "assistant", "payload": payload})
+    autosave_chat_history()
     with st.chat_message("assistant"):
         render_bot_payload(payload)
