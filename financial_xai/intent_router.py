@@ -45,7 +45,15 @@ TICKER_PATTERN = re.compile(r"\b([A-Za-z]{1,10}(?:\.[A-Za-z]{1,4})?)\b")
 def _score_intents(message: str) -> dict[FinancialIntent, int]:
     scores: dict[FinancialIntent, int] = {}
     for intent, keywords in KEYWORDS.items():
-        scores[intent] = sum(1 for keyword in keywords if keyword in message)
+        count = 0
+        for keyword in keywords:
+            if len(keyword) <= 3:
+                # Use word boundary for short keywords
+                if re.search(rf"\b{re.escape(keyword)}\b", message, re.IGNORECASE):
+                    count += 1
+            elif keyword in message:
+                count += 1
+        scores[intent] = count
     return scores
 
 

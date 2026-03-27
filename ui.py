@@ -34,27 +34,62 @@ def set_prompt(prompt: str) -> None:
 
 
 def render_bot_payload(payload: dict[str, Any]) -> None:
-    answer = payload.get("answer", {})
-    st.markdown("**Result**")
-    st.write(answer.get("result", payload.get("reply_markdown", "No result returned.")))
+    # Check for new format
+    formatted = payload.get("formatted")
+    if formatted:
+        st.markdown(f"### {formatted['type'].upper()} Result")
+        st.write(formatted["result"])
 
-    explanation = answer.get("explanation") or []
-    if explanation:
         st.markdown("**Explanation**")
-        for item in explanation:
+        for item in formatted["explanation"]:
             st.write(f"- {item}")
 
-    insight = answer.get("insight") or []
-    if insight:
-        st.markdown("**Insight**")
-        for item in insight:
-            st.write(f"- {item}")
+        viz = formatted.get("visualization")
+        if viz:
+            st.markdown(f"**Visualization ({viz['type']})**")
+            if viz["type"] == "lime":
+                data = viz["data"]
+                if isinstance(data, dict):
+                    prob = data.get("probability", 0)
+                    st.metric("Approval Probability", f"{prob}%")
+                    impacts = data.get("impacts", [])
+                    if impacts:
+                        st.info("\n".join([f"• {i}" for i in impacts]))
+            elif viz["type"] == "chart":
+                data = viz["data"]
+                if isinstance(data, dict) and "schedule" in data:
+                    import pandas as pd
+                    df = pd.DataFrame(data["schedule"])
+                    st.line_chart(df.set_index("year"))
+            elif viz["type"] == "stock":
+                st.json(viz["data"])
 
-    suggestion = answer.get("suggestion") or []
-    if suggestion:
-        st.markdown("**Suggestion**")
-        for item in suggestion:
-            st.write(f"- {item}")
+        if formatted.get("suggestion"):
+            st.markdown("**Suggestion**")
+            st.write(formatted["suggestion"])
+    else:
+        # Fallback to old format
+        answer = payload.get("answer", {})
+        st.markdown("**Result**")
+        st.write(answer.get("result", payload.get("reply_markdown", "No result returned.")))
+
+        explanation = answer.get("explanation") or []
+        if explanation:
+            st.markdown("**Explanation**")
+            for item in explanation:
+                st.write(f"- {item}")
+
+        insight = answer.get("insight") or []
+        if insight:
+            st.markdown("**Insight**")
+            for item in insight:
+                st.write(f"- {item}")
+
+        suggestion = answer.get("suggestion") or []
+        if suggestion:
+            st.markdown("**Suggestion**")
+            for item in suggestion:
+                st.write(f"- {item}")
 
     follow_ups = payload.get("follow_up_questions") or []
     if follow_ups:

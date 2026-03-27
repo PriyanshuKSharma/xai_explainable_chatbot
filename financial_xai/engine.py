@@ -7,8 +7,9 @@ from financial_xai.calculations import compound_interest, fd_maturity, rd_maturi
 from financial_xai.formatting import format_currency, format_percent, format_structured_reply
 from financial_xai.intent_router import detect_intent, extract_slots
 from financial_xai.modeling import LoanModelService
-from financial_xai.schemas import ChatRequest, ChatResponse, ConversationState, FinancialIntent, StructuredAnswer
+from financial_xai.schemas import ChatRequest, ChatResponse, ConversationState, FinancialIntent, StructuredAnswer, NewChatResponse, Visualization
 from financial_xai.stock_service import StockDataError, StockDataService
+from financial_xai.ai_services import AIProvider
 
 
 @dataclass
@@ -24,9 +25,11 @@ class FinancialAssistantEngine:
         self,
         loan_model_service: LoanModelService | None = None,
         stock_data_service: StockDataService | None = None,
+        ai_provider: AIProvider | None = None,
     ) -> None:
         self.loan_model_service = loan_model_service or LoanModelService()
         self.stock_data_service = stock_data_service or StockDataService()
+        self.ai_provider = ai_provider or AIProvider()
 
     def respond(self, request: ChatRequest) -> ChatResponse:
         previous_state = request.conversation or ConversationState()
@@ -45,6 +48,61 @@ class FinancialAssistantEngine:
             pending_questions=result.follow_up_questions,
         )
 
+        # Map intent to new format types
+        intent_map = {
+            FinancialIntent.LOAN_ELIGIBILITY: "loan",
+            FinancialIntent.SIP_PROJECTION: "sip",
+            FinancialIntent.STOCK_GUIDANCE: "stock",
+            FinancialIntent.SIMPLE_INTEREST: "si",
+            FinancialIntent.COMPOUND_INTEREST: "ci",
+        }
+        resp_type = intent_map.get(intent, "general")
+
+        # Extract visualization data
+        viz_type = "chart"
+        viz_data = {}
+        if resp_type == "loan":
+            viz_type = "lime"
+            # Extract impact reasons for visualization
+            viz_data = {
+                "probability": result.metadata.get("approval_probability"),
+                "impacts": result.metadata.get("top_positive", []) + result.metadata.get("top_negative", [])
+            }
+        elif resp_type == "sip":
+            viz_type = "chart"
+            # Generate growth schedule if not present
+            viz_data = result.metadata
+        elif resp_type == "stock":
+            viz_type = "stock"
+            viz_data = result.metadata
+        elif resp_type in ("si", "ci"):
+            viz_type = "chart"
+            viz_data = result.metadata
+
+        # AI-powered refinement (Gemini/Groq)
+        enhanced = self.ai_provider.get_enhanced_content(
+            intent=resp_type,
+            slots=merged_slots,
+            metadata=result.metadata,
+            base_result=result.answer.result
+        )
+
+        explanation = result.answer.explanation
+        suggestion = result.answer.suggestion[0] if result.answer.suggestion else None
+
+        if enhanced:
+            # Prepend Gemini explanation but keep rule-based one for transparency
+            explanation = enhanced.explanation + [f"(Verified by rule engine: {e})" for e in explanation[:1]]
+            suggestion = enhanced.suggestion
+
+        formatted = NewChatResponse(
+            type=resp_type,
+            result=result.answer.result,
+            explanation=explanation,
+            visualization=Visualization(type=viz_type, data=viz_data),
+            suggestion=suggestion,
+        )
+
         return ChatResponse(
             intent=intent,
             answer=result.answer,
@@ -53,6 +111,7 @@ class FinancialAssistantEngine:
             follow_up_questions=result.follow_up_questions,
             conversation=conversation,
             metadata=result.metadata,
+            formatted=formatted,
         )
 
     def _dispatch(self, intent: FinancialIntent, message: str, slots: dict[str, Any]) -> HandlerResult:
@@ -181,6 +240,14 @@ class FinancialAssistantEngine:
             )
 
         calculation = sip_future_value(float(slots["monthly_investment"]), float(slots["annual_rate"]), float(slots["years"]))
+        
+        # Generate a simple growth schedule for visualization
+        years = float(slots["years"])
+        schedule = []
+        for y in range(int(years) + 1):
+            val = sip_future_value(float(slots["monthly_investment"]), float(slots["annual_rate"]), float(y))
+            schedule.append({"year": y, "value": val["maturity_amount"]})
+        
         answer = StructuredAnswer(
             result=f"Estimated SIP value is {format_currency(calculation['maturity_amount'])} on a total investment of {format_currency(calculation['invested_amount'])}.",
             explanation=[
@@ -191,7 +258,7 @@ class FinancialAssistantEngine:
             insight=["Time horizon is usually the strongest growth lever in SIP investing because compounding keeps stacking on earlier returns."],
             suggestion=["If you want a safer comparison, ask me to compare this SIP with FD or RD over the same horizon."],
         )
-        return HandlerResult(answer=answer, metadata=calculation)
+        return HandlerResult(answer=answer, metadata={**calculation, "schedule": schedule})
 
     def _handle_loan_eligibility(self, _: str, slots: dict[str, Any]) -> HandlerResult:
         required = ["monthly_income", "credit_score", "loan_amount", "loan_term_years", "monthly_debt_payments"]

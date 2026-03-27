@@ -3,6 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from flask import Flask, jsonify, request
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from financial_xai.engine import FinancialAssistantEngine
 from financial_xai.prompting import load_master_prompt

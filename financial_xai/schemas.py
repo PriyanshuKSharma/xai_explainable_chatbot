@@ -28,6 +28,19 @@ class ChatRequest(BaseModel):
     conversation: ConversationState | None = None
 
 
+class Visualization(BaseModel):
+    type: str = Field(description="lime | chart | stock")
+    data: Any = Field(description="Relevant visualization data")
+
+
+class NewChatResponse(BaseModel):
+    type: str = Field(description="loan | sip | stock | si | ci")
+    result: str
+    explanation: list[str]
+    visualization: Visualization
+    suggestion: str | None = None
+
+
 class StructuredAnswer(BaseModel):
     result: str
     explanation: list[str]
@@ -43,3 +56,5 @@ class ChatResponse(BaseModel):
     follow_up_questions: list[str] = Field(default_factory=list)
     conversation: ConversationState
     metadata: dict[str, Any] = Field(default_factory=dict)
+    # New format field for easier migration/compatibility
+    formatted: NewChatResponse | None = None
