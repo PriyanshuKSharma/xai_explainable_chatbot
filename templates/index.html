@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial XAI Chatbot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <main class="shell">
+        <section class="hero">
+            <div class="eyebrow">Placement-Level Finance Project</div>
+            <h1>Financial Explainable AI Chatbot</h1>
+            <p class="hero-copy">
+                A transparent assistant for loans, SI, CI, SIPs, stocks, and bank investment plans.
+                Every answer is structured so the logic stays visible.
+            </p>
+
+            <div class="feature-grid">
+                <article class="feature-card">
+                    <h2>Domains</h2>
+                    <p>Loans, interest calculators, SIP planning, stock guidance, FD, and RD comparisons.</p>
+                </article>
+                <article class="feature-card">
+                    <h2>XAI Style</h2>
+                    <p>Each response includes the result, explanation, insight, and suggestion.</p>
+                </article>
+                <article class="feature-card">
+                    <h2>Next Upgrade</h2>
+                    <p>Ready for real loan ML models, live market APIs, and MLOps deployment.</p>
+                </article>
+            </div>
+
+            <div class="example-strip">
+                <button class="example-chip" data-prompt="Calculate simple interest on 100000 at 8% for 3 years">Simple Interest</button>
+                <button class="example-chip" data-prompt="Compound interest on 150000 at 10% for 5 years compounded quarterly">Compound Interest</button>
+                <button class="example-chip" data-prompt="I invest 5000 monthly in SIP for 10 years at 12%">SIP Projection</button>
+                <button class="example-chip" data-prompt="My income is 85000, credit score is 742, loan amount is 1200000, term is 5 years, existing EMI is 12000">Loan Check</button>
+                <button class="example-chip" data-prompt="FD or SIP is better for a low risk investor with a 3 year horizon?">FD vs SIP</button>
+            </div>
+        </section>
+
+        <section class="chat-panel">
+            <div class="chat-header">
+                <div>
+                    <h2>Chat Demo</h2>
+                    <p>Ask a finance question and watch the structured reasoning.</p>
+                </div>
+                <button id="reset-btn" class="ghost-btn" type="button">Reset</button>
+            </div>
+
+            <div id="messages" class="messages">
+                <article class="message assistant">
+                    <div class="message-label">Assistant</div>
+                    <pre class="message-body">Result:
+I can help with loan eligibility, simple interest, compound interest, SIP planning, stock guidance, and bank-plan comparison.
+
+Explanation:
+- This interface is backed by a structured financial reasoning engine.
+- It keeps the logic visible instead of replying like a black box.
+- It can ask follow-up questions when your data is incomplete.
+
+Insight:
+- Clear reasoning is one of the strongest differentiators for finance projects in interviews.
+
+Suggestion:
+- Start with one of the examples above or type your own scenario.</pre>
+                </article>
+            </div>
+
+            <form id="chat-form" class="composer">
+                <label class="sr-only" for="message-input">Message</label>
+                <textarea id="message-input" name="message" rows="3" placeholder="Ask about SI, CI, SIP, loans, stocks, FD, or RD..." required></textarea>
+                <div class="composer-footer">
+                    <p class="composer-hint">Examples: "What is compound interest?" or "Will I get a loan with 700 credit score?"</p>
+                    <button class="send-btn" type="submit">Send</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
