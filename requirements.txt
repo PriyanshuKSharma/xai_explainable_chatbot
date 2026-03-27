@@ -1,0 +1,9 @@
+flask
+streamlit
+requests
+yfinance
+scikit-learn
+joblib
+numpy
+pydantic
+pytest
