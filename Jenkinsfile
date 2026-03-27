@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "priyanshuksharma/financial-ai"
-        DOCKERHUB_USERNAME = credentials('dockerhub-username')
-        DOCKERHUB_PASSWORD = credentials('dockerhub-password')
+        DOCKERHUB_USERNAME = credentials('DOCKERHUB_USERNAME')
+        DOCKERHUB_PASSWORD = credentials('DOCKERHUB_PASSWORD')
     }
 
     stages {
