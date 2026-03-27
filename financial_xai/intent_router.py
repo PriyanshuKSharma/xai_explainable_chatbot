@@ -1,0 +1,296 @@
+from __future__ import annotations
+
+import re
+from typing import Any
+
+from financial_xai.schemas import ConversationState, FinancialIntent
+
+
+KEYWORDS: dict[FinancialIntent, tuple[str, ...]] = {
+    FinancialIntent.LOAN_ELIGIBILITY: (
+        "loan",
+        "eligibility",
+        "eligible",
+        "approval",
+        "approved",
+        "rejected",
+        "credit score",
+        "emi",
+        "borrow",
+    ),
+    FinancialIntent.SIMPLE_INTEREST: ("simple interest", "si"),
+    FinancialIntent.COMPOUND_INTEREST: ("compound interest", "ci", "compounding"),
+    FinancialIntent.SIP_PROJECTION: ("sip", "systematic investment", "mutual fund", "monthly investment"),
+    FinancialIntent.STOCK_GUIDANCE: ("stock", "stocks", "share", "market", "ticker", "quote", "price"),
+    FinancialIntent.BANK_PLAN_COMPARISON: (
+        "fd",
+        "fixed deposit",
+        "rd",
+        "recurring deposit",
+        "bank plan",
+        "bank investment",
+    ),
+    FinancialIntent.FINANCIAL_EDUCATION: (
+        "what is",
+        "explain",
+        "difference between",
+        "how does",
+        "meaning of",
+    ),
+}
+
+TICKER_PATTERN = re.compile(r"\b([A-Za-z]{1,10}(?:\.[A-Za-z]{1,4})?)\b")
+
+
+def _score_intents(message: str) -> dict[FinancialIntent, int]:
+    scores: dict[FinancialIntent, int] = {}
+    for intent, keywords in KEYWORDS.items():
+        scores[intent] = sum(1 for keyword in keywords if keyword in message)
+    return scores
+
+
+def detect_intent(message: str, state: ConversationState | None = None) -> FinancialIntent:
+    lowered = message.lower()
+    scores = _score_intents(lowered)
+    best_intent = max(scores, key=scores.get, default=FinancialIntent.GENERAL_FINANCE)
+    best_score = scores.get(best_intent, 0)
+
+    if state and state.active_intent and state.pending_questions:
+        if best_score <= 1 or best_intent == state.active_intent:
+            return state.active_intent
+
+    if _find_ticker(message) and any(word in lowered for word in ("price", "quote", "stock", "share", "market")):
+        return FinancialIntent.STOCK_GUIDANCE
+    if "compound" in lowered:
+        return FinancialIntent.COMPOUND_INTEREST
+    if "simple interest" in lowered:
+        return FinancialIntent.SIMPLE_INTEREST
+    if best_score > 0:
+        return best_intent
+    if "interest" in lowered:
+        return FinancialIntent.FINANCIAL_EDUCATION
+    return FinancialIntent.GENERAL_FINANCE
+
+
+def _parse_number(raw: str | None) -> float | None:
+    if raw is None:
+        return None
+    return float(raw.replace(",", ""))
+
+
+def _find_first(patterns: list[str], text: str) -> float | None:
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            return _parse_number(match.group(1))
+    return None
+
+
+def _find_percentage(text: str) -> float | None:
+    match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*%", text, flags=re.IGNORECASE)
+    return _parse_number(match.group(1)) if match else None
+
+
+def _find_years(text: str) -> float | None:
+    year_match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*(?:years?|yrs?)", text, flags=re.IGNORECASE)
+    if year_match:
+        return _parse_number(year_match.group(1))
+
+    month_match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*(?:months?|mos?)", text, flags=re.IGNORECASE)
+    if month_match:
+        months = _parse_number(month_match.group(1))
+        return round(months / 12, 2) if months is not None else None
+    return None
+
+
+def _find_credit_score(text: str) -> float | None:
+    patterns = [
+        r"credit score\D{0,15}([0-9]{3})",
+        r"cibil\D{0,15}([0-9]{3})",
+        r"score\D{0,15}([0-9]{3})",
+    ]
+    return _find_first(patterns, text)
+
+
+def _find_risk_appetite(text: str) -> str | None:
+    lowered = text.lower()
+    if "low risk" in lowered or "safe" in lowered or "conservative" in lowered:
+        return "low"
+    if "medium risk" in lowered or "moderate" in lowered or "balanced" in lowered:
+        return "medium"
+    if "high risk" in lowered or "aggressive" in lowered:
+        return "high"
+    return None
+
+
+def _find_compounding_frequency(text: str) -> int | None:
+    lowered = text.lower()
+    if "monthly compounding" in lowered or "compounded monthly" in lowered:
+        return 12
+    if "quarterly compounding" in lowered or "compounded quarterly" in lowered:
+        return 4
+    if "half yearly" in lowered or "half-yearly" in lowered or "semi annual" in lowered:
+        return 2
+    if "annual compounding" in lowered or "compounded annually" in lowered:
+        return 1
+    return None
+
+
+def _find_stock_view(text: str) -> str | None:
+    lowered = text.lower()
+    if "volatile" in lowered or "volatility" in lowered:
+        return "volatile"
+    if "uptrend" in lowered or "bullish" in lowered or "rising" in lowered:
+        return "uptrend"
+    if "downtrend" in lowered or "bearish" in lowered or "falling" in lowered:
+        return "downtrend"
+    return None
+
+
+def _find_ticker(text: str) -> str | None:
+    protected_words = {
+        "loan",
+        "sip",
+        "fd",
+        "rd",
+        "stock",
+        "price",
+        "show",
+        "what",
+        "give",
+        "market",
+        "share",
+        "a",
+        "is",
+        "the",
+        "of",
+        "for",
+        "me",
+    }
+    for token in TICKER_PATTERN.findall(text):
+        normalized = token.upper()
+        if normalized.lower() in protected_words:
+            continue
+        if any(char.isdigit() for char in normalized):
+            continue
+        if len(normalized) == 1:
+            continue
+        return normalized
+    return None
+
+
+def extract_slots(message: str, intent: FinancialIntent) -> dict[str, Any]:
+    slots: dict[str, Any] = {}
+    years = _find_years(message)
+    rate = _find_percentage(message)
+    risk_appetite = _find_risk_appetite(message)
+
+    if years is not None:
+        slots["years"] = years
+    if rate is not None:
+        slots["annual_rate"] = rate
+    if risk_appetite is not None:
+        slots["risk_appetite"] = risk_appetite
+
+    if intent in {FinancialIntent.SIMPLE_INTEREST, FinancialIntent.COMPOUND_INTEREST}:
+        principal = _find_first(
+            [
+                r"(?:principal|amount|sum|deposit)\D{0,15}([0-9][0-9,]*(?:\.[0-9]+)?)",
+                r"([0-9][0-9,]*(?:\.[0-9]+)?)\D{0,10}(?:principal|amount|deposit)",
+                r"on\D{0,10}([0-9][0-9,]*(?:\.[0-9]+)?)",
+            ],
+            message,
+        )
+        if principal is not None:
+            slots["principal"] = principal
+
+    if intent == FinancialIntent.COMPOUND_INTEREST:
+        frequency = _find_compounding_frequency(message)
+        if frequency is not None:
+            slots["compounds_per_year"] = frequency
+
+    if intent == FinancialIntent.SIP_PROJECTION:
+        monthly_investment = _find_first(
+            [
+                r"(?:monthly investment|monthly sip|sip amount)\D{0,15}([0-9][0-9,]*(?:\.[0-9]+)?)",
+                r"invest(?:ing)?\D{0,10}([0-9][0-9,]*(?:\.[0-9]+)?)\D{0,10}(?:monthly|every month)",
+                r"([0-9][0-9,]*(?:\.[0-9]+)?)\D{0,10}(?:monthly|per month)",
+            ],
+            message,
+        )
+        if monthly_investment is not None:
+            slots["monthly_investment"] = monthly_investment
+
+    if intent == FinancialIntent.LOAN_ELIGIBILITY:
+        monthly_income = _find_first(
+            [
+                r"(?:income|salary|earn(?:ing)?)\D{0,15}([0-9][0-9,]*(?:\.[0-9]+)?)",
+                r"([0-9][0-9,]*(?:\.[0-9]+)?)\D{0,10}(?:income|salary)",
+            ],
+            message,
+        )
+        loan_amount = _find_first(
+            [
+                r"(?:loan amount|loan of|borrow|need loan)\D{0,15}([0-9][0-9,]*(?:\.[0-9]+)?)",
+                r"([0-9][0-9,]*(?:\.[0-9]+)?)\D{0,10}(?:loan)",
+            ],
+            message,
+        )
+        monthly_debt_payments = _find_first(
+            [
+                r"(?:existing emi|existing debt|monthly debt|current emi)\D{0,15}([0-9][0-9,]*(?:\.[0-9]+)?)",
+                r"([0-9][0-9,]*(?:\.[0-9]+)?)\D{0,10}(?:existing emi|monthly debt|current emi)",
+            ],
+            message,
+        )
+        employment_years = _find_first(
+            [
+                r"(?:working for|job for|employment)\D{0,15}([0-9]+(?:\.[0-9]+)?)",
+                r"([0-9]+(?:\.[0-9]+)?)\D{0,10}(?:years in job|years of work)",
+            ],
+            message,
+        )
+        credit_score = _find_credit_score(message)
+
+        if monthly_income is not None:
+            slots["monthly_income"] = monthly_income
+        if loan_amount is not None:
+            slots["loan_amount"] = loan_amount
+        if credit_score is not None:
+            slots["credit_score"] = credit_score
+        if monthly_debt_payments is not None:
+            slots["monthly_debt_payments"] = monthly_debt_payments
+        if employment_years is not None:
+            slots["employment_years"] = employment_years
+        if years is not None:
+            slots["loan_term_years"] = years
+
+    if intent == FinancialIntent.BANK_PLAN_COMPARISON:
+        lump_sum = _find_first(
+            [
+                r"(?:lump sum|deposit|invest once)\D{0,15}([0-9][0-9,]*(?:\.[0-9]+)?)",
+                r"(?:invest)\D{0,10}([0-9][0-9,]*(?:\.[0-9]+)?)\D{0,10}(?:one time|lump sum)",
+            ],
+            message,
+        )
+        monthly_amount = _find_first(
+            [
+                r"(?:monthly savings|monthly amount|monthly investment)\D{0,15}([0-9][0-9,]*(?:\.[0-9]+)?)",
+                r"([0-9][0-9,]*(?:\.[0-9]+)?)\D{0,10}(?:monthly|per month)",
+            ],
+            message,
+        )
+        if lump_sum is not None:
+            slots["lump_sum"] = lump_sum
+        if monthly_amount is not None:
+            slots["monthly_amount"] = monthly_amount
+
+    if intent == FinancialIntent.STOCK_GUIDANCE:
+        stock_view = _find_stock_view(message)
+        ticker = _find_ticker(message)
+        if stock_view is not None:
+            slots["stock_view"] = stock_view
+        if ticker is not None:
+            slots["ticker"] = ticker
+
+    return slots
