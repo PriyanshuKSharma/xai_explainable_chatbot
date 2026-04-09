@@ -21,6 +21,12 @@ CHAT_HISTORY_AUTOSAVE = os.getenv("FINANCIAL_XAI_CHAT_HISTORY_AUTOSAVE", "1").st
     "yes",
     "on",
 }
+
+# Streamlit renamed experimental_rerun to rerun; support both
+if hasattr(st, "rerun"):
+    RERUN = st.rerun
+else:
+    RERUN = st.experimental_rerun
 EXAMPLE_PROMPTS = [
     "My income is 85000, credit score is 742, loan amount is 1200000, term is 5 years, existing EMI is 12000",
     "Calculate compound interest on 150000 at 10% for 5 years compounded quarterly",
@@ -66,7 +72,7 @@ def show_landing() -> None:
         )
         if st.button("Open Chat", type="primary", use_container_width=True):
             st.session_state.view = "chat"
-            st.rerun()
+            RERUN()
 
     with col_right:
         st.subheader("Try a prompt")
@@ -80,7 +86,7 @@ def show_landing() -> None:
             if st.button(ex, use_container_width=True):
                 st.session_state.draft = ex
                 st.session_state.view = "chat"
-                st.rerun()
+                RERUN()
 
     st.divider()
     st.subheader("API endpoints")
@@ -190,6 +196,10 @@ def render_bot_payload(payload: dict[str, Any]) -> None:
 
 
 with st.sidebar:
+    if st.button("← Home", use_container_width=True):
+        st.session_state.view = "landing"
+        RERUN()
+
     st.subheader("Backend")
     st.code(BACKEND_URL)
     st.subheader("History")
@@ -220,6 +230,10 @@ with st.sidebar:
         st.session_state.draft = ""
         autosave_chat_history()
         st.rerun()
+
+if st.button("← Home", key="home-main"):
+    st.session_state.view = "landing"
+    RERUN()
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
