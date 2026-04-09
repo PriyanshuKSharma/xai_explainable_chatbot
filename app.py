@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -23,11 +23,18 @@ engine = FinancialAssistantEngine()
 
 
 def create_app() -> Flask:
-    app = Flask(__name__)
+    # Serve templates/static for the landing page while keeping the API lean
+    app = Flask(__name__, static_folder="static", template_folder="templates")
     app.config["JSON_SORT_KEYS"] = False
 
     @app.get("/")
-    def home() -> tuple[dict[str, object], int]:
+    def landing() -> str:
+        """Serve a polished landing page that can hit the same API endpoints."""
+        return render_template("index.html")
+
+    @app.get("/info")
+    def info() -> tuple[dict[str, object], int]:
+        """JSON metadata for quick cURL smoke tests and uptime checks."""
         return (
             {
                 "name": "Financial Explainable AI Chatbot",
@@ -84,4 +91,6 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    host = os.getenv("HOST", "127.0.0.1")
+    port = int(os.getenv("PORT", 5000))
+    app.run(debug=True, host=host, port=port)
