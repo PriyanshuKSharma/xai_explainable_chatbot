@@ -37,8 +37,7 @@ EXAMPLE_PROMPTS = [
 
 
 st.set_page_config(page_title="Financial Explainable AI Chatbot", page_icon=":moneybag:", layout="wide")
-st.title("Financial Explainable AI Chatbot")
-st.caption("Flask backend plus Streamlit frontend with finance calculators, loan intelligence, and live market hooks.")
+
 
 loaded_history: dict[str, Any] | None = None
 if CHAT_HISTORY_AUTOSAVE:
@@ -100,6 +99,9 @@ def show_landing() -> None:
 if st.session_state.view == "landing":
     show_landing()
     st.stop()
+
+st.title("Financial Explainable AI Chatbot")
+st.caption("Flask backend plus Streamlit frontend with finance calculators, loan intelligence, and live market hooks.")
 
 
 def set_prompt(prompt: str) -> None:
