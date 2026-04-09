@@ -45,6 +45,55 @@ if "conversation" not in st.session_state:
     st.session_state.conversation = loaded_history.get("conversation") if loaded_history else None
 if "draft" not in st.session_state:
     st.session_state.draft = ""
+if "view" not in st.session_state:
+    # landing | chat
+    st.session_state.view = "landing"
+
+
+def show_landing() -> None:
+    """Minimal landing page before entering chat."""
+    st.title("Financial Explainable AI Chatbot")
+    st.caption("Transparent finance answers with visible reasoning and math.")
+
+    col_left, col_right = st.columns([1.15, 1])
+    with col_left:
+        st.subheader("Why it's different")
+        st.markdown(
+            "- Loan eligibility with explainable drivers (works even without model.pkl)\n"
+            "- SI/CI calculators, SIP growth, FD/RD comparisons\n"
+            "- Live stock snapshots via yfinance\n"
+            "- Structured replies: result → explanation → insight → suggestion"
+        )
+        if st.button("Open Chat", type="primary", use_container_width=True):
+            st.session_state.view = "chat"
+            st.rerun()
+
+    with col_right:
+        st.subheader("Try a prompt")
+        examples = [
+            "Calculate compound interest on 150000 at 10% for 5 years compounded quarterly",
+            "My income is 85000, credit score is 742, loan amount is 1200000, term is 5 years, existing EMI is 12000",
+            "Show me the stock price for AAPL",
+            "FD or SIP is better for a low risk investor with a 3 year horizon?",
+        ]
+        for ex in examples:
+            if st.button(ex, use_container_width=True):
+                st.session_state.draft = ex
+                st.session_state.view = "chat"
+                st.rerun()
+
+    st.divider()
+    st.subheader("API endpoints")
+    st.code(
+        """GET /health\nGET /prompt\nPOST /chat\nPOST /api/chat\nBackend: http://127.0.0.1:5000/chat\nFrontend: streamlit run ui.py""",
+        language="" if False else None,
+    )
+
+
+# If user wants landing, render it and stop before chat UI mounts
+if st.session_state.view == "landing":
+    show_landing()
+    st.stop()
 
 
 def set_prompt(prompt: str) -> None:
