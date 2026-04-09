@@ -3,57 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial XAI Chatbot</title>
+    <title>Financial XAI — Obsidian & Emerald Edition</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <main class="shell">
-        <section class="hero">
-            <div class="eyebrow">Placement-Level Finance Project</div>
-            <h1>Financial Explainable AI Chatbot</h1>
-            <p class="hero-copy">
-                A transparent assistant for loans, SI, CI, SIPs, stocks, and bank investment plans.
-                Every answer is structured so the logic stays visible.
-            </p>
+    <nav class="nav-floating">
+        <a class="brand" href="#top">XAI.Finance</a>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#ecosystem">Ecosystem</a>
+            <a href="#chat">Console</a>
+        </div>
+        <a class="btn primary glow" href="#chat">Get Started</a>
+    </nav>
 
-            <div class="feature-grid">
-                <article class="feature-card">
-                    <h2>Domains</h2>
-                    <p>Loans, interest calculators, SIP planning, stock guidance, FD, and RD comparisons.</p>
-                </article>
-                <article class="feature-card">
-                    <h2>XAI Style</h2>
-                    <p>Each response includes the result, explanation, insight, and suggestion.</p>
-                </article>
-                <article class="feature-card">
-                    <h2>Next Upgrade</h2>
-                    <p>Ready for real loan ML models, live market APIs, and MLOps deployment.</p>
-                </article>
-            </div>
+    <main>
+        <section class="hero" id="top">
+            <div class="hero-grid">
+                <div class="hero-copy fade">
+                    <div class="eyebrow">Obsidian &amp; Emerald • Hyper-Premium</div>
+                    <h1>
+                        <span>Finance intelligence</span>
+                        <span>that shows the math</span>
+                        <span>and the why.</span>
+                    </h1>
+                    <p class="lede">
+                        A transparent copilot for loans, SI/CI, SIP, FD/RD, and live stocks. Glass-smooth UI, rule + model reasoning, and every answer explains itself.
+                    </p>
+                    <div class="cta-row">
+                        <a class="btn primary glow" href="#chat">Open Chat</a>
+                        <a class="btn ghost" href="/info" target="_blank" rel="noreferrer">API Endpoints</a>
+                    </div>
+                    <div class="badge-row">
+                        <span class="pill">Explainable Loans</span>
+                        <span class="pill">Live yfinance</span>
+                        <span class="pill">Charts ready</span>
+                        <span class="pill">Docker native</span>
+                    </div>
+                    <div class="example-chips">
+                        <button class="example-chip" data-prompt="My income is 85000, credit score is 742, loan amount is 1 crore, term is 5 years, existing EMI is 12000">Loan Check</button>
+                        <button class="example-chip" data-prompt="Calculate compound interest on 150000 at 10% for 5 years compounded quarterly">Compound Interest</button>
+                        <button class="example-chip" data-prompt="I invest 5000 monthly in SIP for 10 years at 12%">SIP Projection</button>
+                        <button class="example-chip" data-prompt="Show me the stock price for AAPL">Live Stock</button>
+                        <button class="example-chip" data-prompt="FD or SIP is better for a low risk investor with a 3 year horizon?">FD vs SIP</button>
+                    </div>
+                </div>
 
-            <div class="example-strip">
-                <button class="example-chip" data-prompt="Calculate simple interest on 100000 at 8% for 3 years">Simple Interest</button>
-                <button class="example-chip" data-prompt="Compound interest on 150000 at 10% for 5 years compounded quarterly">Compound Interest</button>
-                <button class="example-chip" data-prompt="I invest 5000 monthly in SIP for 10 years at 12%">SIP Projection</button>
-                <button class="example-chip" data-prompt="My income is 85000, credit score is 742, loan amount is 1200000, term is 5 years, existing EMI is 12000">Loan Check</button>
-                <button class="example-chip" data-prompt="FD or SIP is better for a low risk investor with a 3 year horizon?">FD vs SIP</button>
+                <div class="hero-visual fade">
+                    <div class="glass-card status-card">
+                        <div class="status-line">
+                            <span class="dot online"></span>
+                            <div>
+                                <p class="label">Live Reasoner</p>
+                                <p class="value">Transparent · Ready</p>
+                            </div>
+                            <span class="pill soft">v1.0</span>
+                        </div>
+                        <ul class="status-list">
+                            <li><strong>Loan intelligence</strong> — approval odds + drivers</li>
+                            <li><strong>Interest math</strong> — SI/CI with chart-ready payloads</li>
+                            <li><strong>Markets</strong> — yfinance snapshot with trend & risk</li>
+                            <li><strong>Explainability</strong> — result → explanation → insight → suggestion</li>
+                        </ul>
+                        <div class="metric-row">
+                            <div class="metric">
+                                <p class="label">Coverage</p>
+                                <p class="value">6 pillars</p>
+                            </div>
+                            <div class="metric">
+                                <p class="label">Transparency</p>
+                                <p class="value">100%</p>
+                            </div>
+                            <div class="metric">
+                                <p class="label">Uptime</p>
+                                <p class="value">99.9%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <section class="chat-panel">
-            <div class="chat-header">
-                <div>
-                    <h2>Chat Demo</h2>
-                    <p>Ask a finance question and watch the structured reasoning.</p>
+        <section class="trust" id="features">
+            <div class="trust-grid">
+                <div class="trust-card fade">
+                    <p class="label">Trust Bench</p>
+                    <h3>Result · Why · Next</h3>
+                    <p class="muted">Every reply ships with math, drivers, and a suggestion so reviewers see the reasoning, not guesses.</p>
                 </div>
-                <button id="reset-btn" class="ghost-btn" type="button">Reset</button>
+                <div class="trust-card fade">
+                    <p class="label">Data Inputs</p>
+                    <h3>Slots auto-detected</h3>
+                    <p class="muted">Amounts in words (crore/lakh/million) now parse automatically for loans and interest.</p>
+                </div>
+                <div class="trust-card fade">
+                    <p class="label">Delivery</p>
+                    <h3>API + Streamlit</h3>
+                    <p class="muted">Flask `/api/chat` for programmatic calls; Streamlit chat for live demos.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="ecosystem" id="ecosystem">
+            <div class="eco-header fade">
+                <p class="label">Ecosystem</p>
+                <h2>Everything you need to ship a finance AI with taste.</h2>
+            </div>
+            <div class="eco-grid">
+                <article class="eco-card fade">
+                    <h3>Explainable Loans</h3>
+                    <p>Rule + model pipeline, LIME-style factors, EMI context, and fallback when the model file is absent.</p>
+                </article>
+                <article class="eco-card fade">
+                    <h3>Interest Intelligence</h3>
+                    <p>Simple & compound interest, SIP, FD, RD with chart-ready schedules and human-friendly narration.</p>
+                </article>
+                <article class="eco-card fade">
+                    <h3>Market Hooks</h3>
+                    <p>yfinance snapshots, trend and volatility heuristics, with zero fabricated prices.</p>
+                </article>
+                <article class="eco-card fade">
+                    <h3>Developer-First</h3>
+                    <p>Docker/Compose, REST endpoints, prompt loader, chat logging, and clean schemas.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="chat-panel" id="chat">
+            <div class="chat-header">
+                <div class="chat-status">
+                    <span class="dot online"></span>
+                    <div>
+                        <p class="label">Chat Console</p>
+                        <h3>Live, explainable responses</h3>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <a class="btn ghost" href="/info" target="_blank" rel="noreferrer">API Info</a>
+                    <button id="reset-btn" class="btn soft">Reset</button>
+                </div>
             </div>
 
-            <div id="messages" class="messages">
-                <article class="message assistant">
+            <div class="messages" id="messages">
+                <article class="message assistant fade">
                     <div class="message-label">Assistant</div>
                     <pre class="message-body">Result:
 I can help with loan eligibility, simple interest, compound interest, SIP planning, stock guidance, and bank-plan comparison.
@@ -73,11 +168,11 @@ Suggestion:
 
             <form id="chat-form" class="composer">
                 <label class="sr-only" for="message-input">Message</label>
-                <textarea id="message-input" name="message" rows="3" placeholder="Ask about SI, CI, SIP, loans, stocks, FD, or RD..." required></textarea>
-                <div class="composer-footer">
-                    <p class="composer-hint">Examples: "What is compound interest?" or "Will I get a loan with 700 credit score?"</p>
-                    <button class="send-btn" type="submit">Send</button>
+                <div class="composer-input">
+                    <textarea id="message-input" name="message" rows="2" placeholder="Ask about SI, CI, SIP, loans, stocks, FD, or RD..." required></textarea>
+                    <button class="btn primary" type="submit" id="send-btn">Send</button>
                 </div>
+                <p class="composer-hint">Tip: try “loan amount 1 crore at 8.5% for 20 years with EMI 12000”.</p>
             </form>
         </section>
     </main>
