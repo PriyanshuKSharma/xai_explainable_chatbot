@@ -103,6 +103,36 @@ Example request:
 python -m pytest
 ```
 
+## Docker
+
+You can run the entire application using Docker.
+
+### 1. Build the image
+
+```bash
+docker build -t xai-chatbot .
+```
+
+### 2. Run the container
+
+```bash
+# Set HOST=0.0.0.0 so the Flask API is accessible from the host
+docker run -p 8501:8501 -p 5000:5000 -e HOST=0.0.0.0 --env-file .env xai-chatbot
+```
+
+### Using Docker Compose
+
+For a smoother experience, use Docker Compose:
+
+```bash
+docker-compose up --build
+```
+
+The application will be available at:
+
+- **Frontend (Streamlit):** `http://localhost:8501`
+- **Backend (API):** `http://localhost:5000`
+
 ## Next upgrades
 
 - Add LIME visualizations for model-backed loan predictions
