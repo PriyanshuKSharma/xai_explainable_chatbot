@@ -85,6 +85,63 @@ def _parse_number(raw: str | None) -> float | None:
         return None
     return float(raw.replace(",", ""))
 
+# unit-aware amount parsing helpers
+UNIT_MULTIPLIERS = {
+    "crore": 10_000_000,
+    "cr": 10_000_000,
+    "lakh": 100_000,
+    "lac": 100_000,
+    "million": 1_000_000,
+    "mn": 1_000_000,
+    "billion": 1_000_000_000,
+    "bn": 1_000_000_000,
+}
+
+WORD_NUMBERS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
+
+
+def _parse_word_number(raw: str) -> float | None:
+    token = raw.strip().lower()
+    return float(WORD_NUMBERS[token]) if token in WORD_NUMBERS else None
+
+
+def _find_unit_amount(text: str) -> float | None:
+    """
+    Detect amounts expressed with alphabetical units (e.g., '1 crore', '50 lakh', '2 million').
+    Returns numeric value in absolute currency units.
+    """
+    pattern = re.compile(
+        r"(?P<num>[0-9]+(?:\.[0-9]+)?|[A-Za-z]+)\s*(?P<unit>crore|cr|lakh|lac|million|mn|billion|bn)",
+        re.IGNORECASE,
+    )
+    match = pattern.search(text)
+    if not match:
+        return None
+
+    raw_num = match.group("num")
+    unit = match.group("unit").lower()
+    multiplier = UNIT_MULTIPLIERS.get(unit, 1)
+
+    try:
+        value = float(raw_num.replace(",", ""))
+    except ValueError:
+        value = _parse_word_number(raw_num)
+
+    if value is None:
+        return None
+    return value * multiplier
+
 
 def _find_first(patterns: list[str], text: str) -> float | None:
     for pattern in patterns:
@@ -209,6 +266,8 @@ def extract_slots(message: str, intent: FinancialIntent) -> dict[str, Any]:
             ],
             message,
         )
+        if principal is None:
+            principal = _find_unit_amount(message)
         if principal is not None:
             slots["principal"] = principal
 
@@ -244,6 +303,8 @@ def extract_slots(message: str, intent: FinancialIntent) -> dict[str, Any]:
             ],
             message,
         )
+        if loan_amount is None:
+            loan_amount = _find_unit_amount(message)
         monthly_debt_payments = _find_first(
             [
                 r"(?:existing emi|existing debt|monthly debt|current emi)\D{0,15}([0-9][0-9,]*(?:\.[0-9]+)?)",
