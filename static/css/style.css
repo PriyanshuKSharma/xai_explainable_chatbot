@@ -582,7 +582,72 @@ p {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding-top: 80px;
+    padding: 94px 18px 22px;
+}
+
+.chat-shell {
+    width: min(980px, 100%);
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-radius: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow: 0 40px 120px rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(20px);
+    overflow: hidden;
+}
+
+.chat-shell-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.chat-shell-title {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.chat-shell-kicker {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 900;
+}
+
+.chat-shell-heading {
+    font-family: "Fraunces", serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-shell-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.18);
+    color: rgba(255, 255, 255, 0.76);
+    font-weight: 900;
+    font-size: 0.82rem;
+}
+
+.chat-shell-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(102, 255, 209, 0.95);
+    box-shadow: 0 0 0 6px rgba(102, 255, 209, 0.12), 0 0 16px rgba(102, 255, 209, 0.32);
 }
 
 .messages-container {
@@ -592,14 +657,36 @@ p {
     scroll-behavior: smooth;
     scrollbar-gutter: stable;
     padding-bottom: 10px;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 40px, black calc(100% - 50px), transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 40px, black calc(100% - 50px), transparent 100%);
+    position: relative;
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.messages-container::before,
+.messages-container::after {
+    content: "";
+    position: sticky;
+    left: 0;
+    right: 0;
+    height: 22px;
+    pointer-events: none;
+    z-index: 5;
+    display: block;
+}
+
+.messages-container::before {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(5, 6, 11, 0.95), rgba(5, 6, 11, 0));
+}
+
+.messages-container::after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(5, 6, 11, 0.95), rgba(5, 6, 11, 0));
 }
 
 .messages-scroll-area {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 20px 24px 40px;
+    max-width: none;
+    margin: 0;
+    padding: 22px 20px 34px;
     display: flex;
     flex-direction: column;
     gap: 32px;
@@ -786,10 +873,11 @@ p {
 
 /* Chat Input Area */
 .chat-input-area {
-    background: linear-gradient(to top, var(--bg) 60%, transparent);
-    padding: 0 20px 24px;
+    background: rgba(5, 6, 11, 0.76);
+    padding: 14px 16px 16px;
     position: relative;
     z-index: 10;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .chat-input-area::before {
@@ -799,13 +887,13 @@ p {
     left: 0;
     right: 0;
     height: 10px;
-    background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.18));
+    background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.22));
     pointer-events: none;
 }
 
 .chat-input-container {
-    max-width: 800px;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
 }
 
 .composer-input.immersive {
@@ -897,6 +985,7 @@ p {
     .nav-links { display: none; }
     .trust-grid { grid-template-columns: 1fr; }
     .eco-grid { grid-template-columns: 1fr; }
+    .chat-viewport { padding: 90px 12px 14px; }
 }
 
 @media (max-width: 640px) {
@@ -908,4 +997,12 @@ p {
     .hero-grid { gap: 20px; }
     .metric-row { grid-template-columns: repeat(2, 1fr); }
     .message { max-width: 95%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
 }
