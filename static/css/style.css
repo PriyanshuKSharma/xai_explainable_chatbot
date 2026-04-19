@@ -161,6 +161,54 @@ main {
     padding-top: 40px;
 }
 
+/* Dedicated Chat Page */
+.chat-page .nav-floating {
+    position: sticky;
+    top: 24px;
+}
+
+.chat-container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.chat-panel.full-height {
+    height: calc(100vh - 160px);
+    min-height: 600px;
+}
+
+.example-chips.compact {
+    margin-top: 12px;
+    gap: 8px;
+}
+
+.example-chips.compact .example-chip {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+}
+
+@media (max-width: 1100px) {
+    .shell {
+        grid-template-columns: 1fr;
+        padding-top: 140px;
+        gap: 60px;
+    }
+    
+    .hero {
+        text-align: center;
+        align-items: center;
+    }
+
+    .chat-container {
+        margin: 20px auto;
+    }
+
+    .chat-panel.full-height {
+        height: calc(100vh - 120px);
+    }
+}
+
 .hero-grid {
     display: grid;
     grid-template-columns: 1.1fr 0.9fr;
