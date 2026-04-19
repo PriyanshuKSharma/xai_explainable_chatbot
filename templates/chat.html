@@ -14,54 +14,43 @@
 </head>
 
 <body class="chat-page">
-    <nav class="nav-floating">
+    <nav class="nav-floating chat-nav-floating">
         <a class="brand" href="/">XAI.Finance</a>
         <div class="nav-links">
             <a href="/#features">Features</a>
             <a href="/#ecosystem">Ecosystem</a>
-            <a href="/chat" class="active">Console</a>
+            <a href="/info" target="_blank" rel="noreferrer">API</a>
         </div>
-        <a class="btn primary glow" href="/">Back to Home</a>
+        <div class="chat-nav-actions">
+            <button id="reset-btn" type="button" class="btn soft btn-sm">Reset</button>
+            <a class="btn primary glow btn-sm" href="/">Exit</a>
+        </div>
     </nav>
 
-    <main class="chat-container">
-        <section class="chat-panel full-height" id="chat">
-            <div class="chat-header">
-                <div class="chat-status">
-                    <span class="dot online"></span>
-                    <div>
-                        <p class="label">Chat Console</p>
-                        <h3>Live, explainable responses</h3>
+    <main class="chat-viewport">
+        <div class="messages-container">
+            <div class="messages-scroll-area" id="messages">
+                <article class="message assistant fade visible">
+                    <div class="message-inner">
+                        <div class="message-label">Assistant</div>
+                        <div class="message-body">
+                            <p class="md-p">Hello! I'm your Financial XAI Assistant.</p>
+                            <p class="md-p">I can help with:</p>
+                            <ul class="md-list">
+                                <li class="md-li">Loan eligibility &amp; factor analysis</li>
+                                <li class="md-li">Simple &amp; compound interest math</li>
+                                <li class="md-li">SIP, FD, and RD projections</li>
+                                <li class="md-li">Live stock snapshots via yfinance</li>
+                            </ul>
+                            <p class="md-p">How can I help you today?</p>
+                        </div>
                     </div>
-                </div>
-                <div class="chat-actions">
-                    <a class="btn ghost" href="/info" target="_blank" rel="noreferrer">API Info</a>
-                    <button id="reset-btn" class="btn soft">Reset</button>
-                </div>
-            </div>
-
-            <div class="messages" id="messages">
-                <article class="message assistant fade">
-                    <div class="message-label">Assistant</div>
-                    <pre class="message-body">Hello! I'm your Financial XAI Assistant. 
-
-I can help with:
-- Loan eligibility & factor analysis
-- Simple & Compound interest math
-- SIP, FD, and RD projections
-- Live stock snapshots via yfinance
-
-How can I help you today?</pre>
                 </article>
             </div>
+        </div>
 
-            <form id="chat-form" class="composer">
-                <label class="sr-only" for="message-input">Message</label>
-                <div class="composer-input">
-                    <textarea id="message-input" name="message" rows="2"
-                        placeholder="Ask about SI, CI, SIP, loans, stocks..." required autofocus></textarea>
-                    <button class="btn primary" type="submit" id="send-btn">Send</button>
-                </div>
+        <div class="chat-input-area">
+            <div class="chat-input-container">
                 <div class="example-chips compact">
                     <button type="button" class="example-chip"
                         data-prompt="My income is 85000, credit score is 742, loan amount is 1200000">Loan
@@ -71,8 +60,25 @@ How can I help you today?</pre>
                     <button type="button" class="example-chip" data-prompt="Show me stock price for AAPL">Live
                         Stock</button>
                 </div>
-            </form>
-        </section>
+                <form id="chat-form" class="composer">
+                    <label class="sr-only" for="message-input">Message</label>
+                    <div class="composer-input immersive">
+                        <textarea id="message-input" name="message" rows="1"
+                            placeholder="Ask about SI, CI, SIP, loans, stocks..." required autofocus></textarea>
+                        <button class="icon-btn" type="submit" id="send-btn" title="Send Message">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+                <div class="chat-footer">
+                    Enter to send • Shift+Enter for a new line • Financial XAI can make mistakes—verify important info.
+                </div>
+            </div>
+        </div>
     </main>
 
     <script src="/static/js/app.js"></script>
