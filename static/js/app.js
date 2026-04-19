@@ -46,14 +46,22 @@ function appendMessage(role, text) {
 
         const body = document.createElement("pre");
         body.className = "message-body";
-        body.textContent = text;
-        wrapper.appendChild(body);
+        wrapper.textContent = text;
     } else {
         wrapper.textContent = text;
     }
 
-    messages.appendChild(wrapper);
-    messages.scrollTop = messages.scrollHeight;
+    if (messages) {
+        messages.appendChild(wrapper);
+        
+        // Trigger transition
+        requestAnimationFrame(() => {
+            wrapper.style.opacity = "1";
+            wrapper.style.transform = "translateY(0)";
+        });
+
+        messages.scrollTop = messages.scrollHeight;
+    }
 }
 
 function addTyping() {
