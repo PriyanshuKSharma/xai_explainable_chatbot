@@ -32,6 +32,11 @@ def create_app() -> Flask:
         """Serve a polished landing page that can hit the same API endpoints."""
         return render_template("index.html")
 
+    @app.get("/chat")
+    def chat_page() -> str:
+        """Serve the dedicated chat interface."""
+        return render_template("chat.html")
+
     @app.get("/info")
     def info() -> tuple[dict[str, object], int]:
         """JSON metadata for quick cURL smoke tests and uptime checks."""
