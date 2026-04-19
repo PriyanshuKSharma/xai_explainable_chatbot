@@ -1,23 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financial XAI — Obsidian & Emerald Edition</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
+
 <body>
     <nav class="nav-floating">
         <a class="brand" href="#top">XAI.Finance</a>
         <div class="nav-links">
             <a href="#features">Features</a>
             <a href="#ecosystem">Ecosystem</a>
-            <a href="#chat">Console</a>
+            <a href="/chat">Console</a>
         </div>
-        <a class="btn primary glow" href="#chat">Get Started</a>
+        <a class="btn primary glow" href="/chat">Get Started</a>
     </nav>
 
     <main>
@@ -31,10 +35,11 @@
                         <span>and the why.</span>
                     </h1>
                     <p class="lede">
-                        A transparent copilot for loans, SI/CI, SIP, FD/RD, and live stocks. Glass-smooth UI, rule + model reasoning, and every answer explains itself.
+                        A transparent copilot for loans, SI/CI, SIP, FD/RD, and live stocks. Glass-smooth UI, rule +
+                        model reasoning, and every answer explains itself.
                     </p>
                     <div class="cta-row">
-                        <a class="btn primary glow" href="#chat">Open Chat</a>
+                        <a class="btn primary glow" href="/chat">Open Chat Console</a>
                         <a class="btn ghost" href="/info" target="_blank" rel="noreferrer">API Endpoints</a>
                     </div>
                     <div class="badge-row">
@@ -44,11 +49,18 @@
                         <span class="pill">Docker native</span>
                     </div>
                     <div class="example-chips">
-                        <button class="example-chip" data-prompt="My income is 85000, credit score is 742, loan amount is 1 crore, term is 5 years, existing EMI is 12000">Loan Check</button>
-                        <button class="example-chip" data-prompt="Calculate compound interest on 150000 at 10% for 5 years compounded quarterly">Compound Interest</button>
-                        <button class="example-chip" data-prompt="I invest 5000 monthly in SIP for 10 years at 12%">SIP Projection</button>
+                        <button class="example-chip"
+                            data-prompt="My income is 85000, credit score is 742, loan amount is 1 crore, term is 5 years, existing EMI is 12000">Loan
+                            Check</button>
+                        <button class="example-chip"
+                            data-prompt="Calculate compound interest on 150000 at 10% for 5 years compounded quarterly">Compound
+                            Interest</button>
+                        <button class="example-chip" data-prompt="I invest 5000 monthly in SIP for 10 years at 12%">SIP
+                            Projection</button>
                         <button class="example-chip" data-prompt="Show me the stock price for AAPL">Live Stock</button>
-                        <button class="example-chip" data-prompt="FD or SIP is better for a low risk investor with a 3 year horizon?">FD vs SIP</button>
+                        <button class="example-chip"
+                            data-prompt="FD or SIP is better for a low risk investor with a 3 year horizon?">FD vs
+                            SIP</button>
                     </div>
                 </div>
 
@@ -92,12 +104,14 @@
                 <div class="trust-card fade">
                     <p class="label">Trust Bench</p>
                     <h3>Result · Why · Next</h3>
-                    <p class="muted">Every reply ships with math, drivers, and a suggestion so reviewers see the reasoning, not guesses.</p>
+                    <p class="muted">Every reply ships with math, drivers, and a suggestion so reviewers see the
+                        reasoning, not guesses.</p>
                 </div>
                 <div class="trust-card fade">
                     <p class="label">Data Inputs</p>
                     <h3>Slots auto-detected</h3>
-                    <p class="muted">Amounts in words (crore/lakh/million) now parse automatically for loans and interest.</p>
+                    <p class="muted">Amounts in words (crore/lakh/million) now parse automatically for loans and
+                        interest.</p>
                 </div>
                 <div class="trust-card fade">
                     <p class="label">Delivery</p>
@@ -115,11 +129,13 @@
             <div class="eco-grid">
                 <article class="eco-card fade">
                     <h3>Explainable Loans</h3>
-                    <p>Rule + model pipeline, LIME-style factors, EMI context, and fallback when the model file is absent.</p>
+                    <p>Rule + model pipeline, LIME-style factors, EMI context, and fallback when the model file is
+                        absent.</p>
                 </article>
                 <article class="eco-card fade">
                     <h3>Interest Intelligence</h3>
-                    <p>Simple & compound interest, SIP, FD, RD with chart-ready schedules and human-friendly narration.</p>
+                    <p>Simple & compound interest, SIP, FD, RD with chart-ready schedules and human-friendly narration.
+                    </p>
                 </article>
                 <article class="eco-card fade">
                     <h3>Market Hooks</h3>
@@ -132,51 +148,10 @@
             </div>
         </section>
 
-        <section class="chat-panel" id="chat">
-            <div class="chat-header">
-                <div class="chat-status">
-                    <span class="dot online"></span>
-                    <div>
-                        <p class="label">Chat Console</p>
-                        <h3>Live, explainable responses</h3>
-                    </div>
-                </div>
-                <div class="chat-actions">
-                    <a class="btn ghost" href="/info" target="_blank" rel="noreferrer">API Info</a>
-                    <button id="reset-btn" class="btn soft">Reset</button>
-                </div>
-            </div>
-
-            <div class="messages" id="messages">
-                <article class="message assistant fade">
-                    <div class="message-label">Assistant</div>
-                    <pre class="message-body">Result:
-I can help with loan eligibility, simple interest, compound interest, SIP planning, stock guidance, and bank-plan comparison.
-
-Explanation:
-- This interface is backed by a structured financial reasoning engine.
-- It keeps the logic visible instead of replying like a black box.
-- It can ask follow-up questions when your data is incomplete.
-
-Insight:
-- Clear reasoning is one of the strongest differentiators for finance projects in interviews.
-
-Suggestion:
-- Start with one of the examples above or type your own scenario.</pre>
-                </article>
-            </div>
-
-            <form id="chat-form" class="composer">
-                <label class="sr-only" for="message-input">Message</label>
-                <div class="composer-input">
-                    <textarea id="message-input" name="message" rows="2" placeholder="Ask about SI, CI, SIP, loans, stocks, FD, or RD..." required></textarea>
-                    <button class="btn primary" type="submit" id="send-btn">Send</button>
-                </div>
-                <p class="composer-hint">Tip: try “loan amount 1 crore at 8.5% for 20 years with EMI 12000”.</p>
-            </form>
-        </section>
+        <!-- Chat moved to /chat -->
     </main>
 
     <script src="/static/js/app.js"></script>
 </body>
+
 </html>
