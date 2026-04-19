@@ -121,32 +121,43 @@ async function sendMessage(message) {
     }
 }
 
-form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const message = input.value.trim();
-    if (!message) return;
-    await sendMessage(message);
-    input.focus();
-});
+// Form submission
+if (form && input) {
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const message = input.value.trim();
+        if (!message) return;
 
-/* Auto-expanding textarea */
-input.addEventListener("input", function () {
-    this.style.height = "auto";
-    this.style.height = `${this.scrollHeight}px`;
-});
+        input.disabled = true;
+        try {
+            await sendMessage(message);
+        } finally {
+            input.disabled = false;
+            input.focus();
+        }
+    });
 
-/* Example chips */
+    // Auto-expanding textarea
+    input.addEventListener("input", function() {
+        this.style.height = "auto";
+        this.style.height = (this.scrollHeight) + "px";
+    });
+}
+
 exampleChips.forEach((chip) => {
     chip.addEventListener("click", () => {
+        if (!input) return;
         input.value = chip.dataset.prompt ?? "";
-        input.dispatchEvent(new Event("input"));
+        input.style.height = "auto";
+        input.style.height = (input.scrollHeight) + "px";
         input.focus();
     });
 });
 
-/* Reset */
-resetButton?.addEventListener("click", () => {
-    conversation = null;
-    messages.innerHTML = "";
-    appendMessage("assistant", "Context cleared. Ask a fresh finance question to start again.");
-});
+if (resetButton) {
+    resetButton.addEventListener("click", () => {
+        conversation = null;
+        if (messages) messages.innerHTML = "";
+        appendMessage("assistant", "Experience reset. How can I help you today?");
+    });
+}
