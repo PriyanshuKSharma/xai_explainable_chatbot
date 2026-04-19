@@ -1,10 +1,11 @@
 const form = document.getElementById("chat-form");
 const input = document.getElementById("message-input");
 const messages = document.getElementById("messages");
-const exampleChips = document.querySelectorAll(".example-chip");
 const resetButton = document.getElementById("reset-btn");
 const sendBtn = document.getElementById("send-btn");
 const navLinks = document.querySelectorAll('a[href^="#"]');
+const suggestions = document.getElementById("suggestions");
+const suggestionButtons = document.querySelectorAll("[data-prompt]");
 
 let conversation = null;
 let typingNode = null;
@@ -217,9 +218,17 @@ function setComposerEnabled(enabled) {
 }
 
 function ensureScrollToBottom() {
-    const messagesContainer = document.querySelector(".messages-container");
-    if (!messagesContainer) return;
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    const scroll = document.querySelector(".chatgpt-scroll");
+    if (!scroll) return;
+    scroll.scrollTop = scroll.scrollHeight;
+}
+
+function hideSuggestions() {
+    if (suggestions) suggestions.style.display = "none";
+}
+
+function showSuggestions() {
+    if (suggestions) suggestions.style.display = "";
 }
 
 /* Smooth scroll for in-page links */
@@ -248,29 +257,26 @@ const observer = new IntersectionObserver(
 document.querySelectorAll(".fade").forEach((el) => observer.observe(el));
 
 function appendMessage(role, text) {
-    const wrapper = document.createElement("article");
-    wrapper.className = `message ${role} fade`;
+    const wrapper = document.createElement("div");
+    wrapper.className = `chatgpt-message ${role} fade`;
 
-    const inner = document.createElement("div");
-    inner.className = "message-inner";
+    const avatar = document.createElement("div");
+    avatar.className = "chatgpt-avatar";
+    avatar.textContent = role === "assistant" ? "A" : "U";
+    avatar.setAttribute("aria-hidden", "true");
 
-    if (role === "assistant") {
-        const label = document.createElement("div");
-        label.className = "message-label";
-        label.textContent = "Assistant";
-        inner.appendChild(label);
-    }
+    const bubble = document.createElement("div");
+    bubble.className = "chatgpt-bubble";
 
-    const body = document.createElement("div");
-    body.className = "message-body";
-    if (role === "assistant") {
-        body.appendChild(renderMarkdownToFragment(text));
-    } else {
-        body.textContent = text;
-    }
-    inner.appendChild(body);
+    const content = document.createElement("div");
+    content.className = "chatgpt-content";
+    if (role === "assistant") content.appendChild(renderMarkdownToFragment(text));
+    else content.textContent = text;
 
-    wrapper.appendChild(inner);
+    bubble.appendChild(content);
+
+    wrapper.appendChild(avatar);
+    wrapper.appendChild(bubble);
 
     if (messages) {
         messages.appendChild(wrapper);
@@ -285,28 +291,28 @@ function appendMessage(role, text) {
 
 function addTyping() {
     removeTyping();
-    const wrap = document.createElement("article");
-    wrap.className = "message assistant typing fade visible";
+    const wrap = document.createElement("div");
+    wrap.className = "chatgpt-message assistant typing fade visible";
 
-    const inner = document.createElement("div");
-    inner.className = "message-inner";
+    const avatar = document.createElement("div");
+    avatar.className = "chatgpt-avatar";
+    avatar.textContent = "A";
+    avatar.setAttribute("aria-hidden", "true");
 
-    const label = document.createElement("div");
-    label.className = "message-label";
-    label.textContent = "Assistant";
-    inner.appendChild(label);
+    const bubble = document.createElement("div");
+    bubble.className = "chatgpt-bubble";
 
     const dots = document.createElement("div");
-    dots.style.display = "flex";
-    dots.style.gap = "4px";
+    dots.className = "chatgpt-typing";
     ["", "", ""].forEach(() => {
         const d = document.createElement("span");
         d.className = "typing-dot";
         dots.appendChild(d);
     });
-    inner.appendChild(dots);
-    
-    wrap.appendChild(inner);
+
+    bubble.appendChild(dots);
+    wrap.appendChild(avatar);
+    wrap.appendChild(bubble);
 
     if (messages) {
         messages.appendChild(wrap);
@@ -323,6 +329,7 @@ function removeTyping() {
 }
 
 async function sendMessage(message) {
+    hideSuggestions();
     appendMessage("user", message);
     addTyping();
     input.value = "";
@@ -383,10 +390,12 @@ if (form && input) {
     });
 }
 
-exampleChips.forEach((chip) => {
-    chip.addEventListener("click", () => {
+suggestionButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
         if (!input) return;
-        input.value = chip.dataset.prompt ?? "";
+        const prompt = btn.dataset.prompt ?? "";
+        if (!prompt) return;
+        input.value = prompt;
         input.style.height = "auto";
         input.style.height = (input.scrollHeight) + "px";
         input.focus();
@@ -397,7 +406,11 @@ if (resetButton) {
     resetButton.addEventListener("click", () => {
         conversation = null;
         if (messages) messages.innerHTML = "";
-        appendMessage("assistant", "Experience reset. How can I help you today?");
+        showSuggestions();
+        appendMessage(
+            "assistant",
+            "New chat started.\n\nTry a prompt, for example:\n- Loan eligibility with income + credit score\n- Compound interest for 5 years\n- Live stock price for AAPL"
+        );
     });
 }
 
