@@ -14,69 +14,64 @@
 </head>
 
 <body class="chat-page">
-    <nav class="nav-floating chat-nav-floating">
-        <a class="brand" href="/">XAI.Finance</a>
-        <div class="nav-links">
-            <a href="/#features">Features</a>
-            <a href="/#ecosystem">Ecosystem</a>
-            <a href="/info" target="_blank" rel="noreferrer">API</a>
+    <header class="chatgpt-topbar">
+        <a class="chatgpt-brand" href="/">XAI.Finance</a>
+        <div class="chatgpt-topbar-actions">
+            <a class="chatgpt-link" href="/info" target="_blank" rel="noreferrer">API</a>
+            <button id="reset-btn" type="button" class="chatgpt-btn">New chat</button>
         </div>
-        <div class="chat-nav-actions">
-            <button id="reset-btn" type="button" class="btn soft btn-sm">Reset</button>
-            <a class="btn primary glow btn-sm" href="/">Exit</a>
-        </div>
-    </nav>
+    </header>
 
-    <main class="chat-viewport">
-        <div class="messages-container">
-            <div class="messages-scroll-area" id="messages">
-                <article class="message assistant fade visible">
-                    <div class="message-inner">
-                        <div class="message-label">Assistant</div>
-                        <div class="message-body">
-                            <p class="md-p">Hello! I'm your Financial XAI Assistant.</p>
-                            <p class="md-p">I can help with:</p>
-                            <ul class="md-list">
-                                <li class="md-li">Loan eligibility &amp; factor analysis</li>
-                                <li class="md-li">Simple &amp; compound interest math</li>
-                                <li class="md-li">SIP, FD, and RD projections</li>
-                                <li class="md-li">Live stock snapshots via yfinance</li>
-                            </ul>
-                            <p class="md-p">How can I help you today?</p>
+    <main class="chatgpt-main">
+        <div class="chatgpt-wrap" aria-label="Chat console">
+            <div class="chatgpt-scroll" role="log" aria-live="polite">
+                <div id="messages" class="chatgpt-messages">
+                    <div class="chatgpt-message assistant">
+                        <div class="chatgpt-avatar" aria-hidden="true">A</div>
+                        <div class="chatgpt-bubble">
+                            <div class="chatgpt-content">
+                                <p class="md-p">Hello! I'm your Financial XAI Assistant.</p>
+                                <p class="md-p">Try one of these:</p>
+                            </div>
+                            <div id="suggestions" class="chatgpt-suggestions" aria-label="Suggested prompts">
+                                <button type="button" class="chatgpt-suggestion"
+                                    data-prompt="My income is 85000, credit score is 742, loan amount is 1200000">
+                                    <div class="chatgpt-suggestion-title">Loan check</div>
+                                    <div class="chatgpt-suggestion-sub">Eligibility + factors</div>
+                                </button>
+                                <button type="button" class="chatgpt-suggestion"
+                                    data-prompt="Compound interest on 150000 at 10% for 5 years">
+                                    <div class="chatgpt-suggestion-title">Interest math</div>
+                                    <div class="chatgpt-suggestion-sub">SI/CI explanations</div>
+                                </button>
+                                <button type="button" class="chatgpt-suggestion" data-prompt="Show me stock price for AAPL">
+                                    <div class="chatgpt-suggestion-title">Live stock</div>
+                                    <div class="chatgpt-suggestion-sub">yfinance snapshot</div>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </article>
-            </div>
-        </div>
-
-        <div class="chat-input-area">
-            <div class="chat-input-container">
-                <div class="example-chips compact">
-                    <button type="button" class="example-chip"
-                        data-prompt="My income is 85000, credit score is 742, loan amount is 1200000">Loan
-                        Check</button>
-                    <button type="button" class="example-chip"
-                        data-prompt="Compound interest on 150000 at 10% for 5 years">Interest Math</button>
-                    <button type="button" class="example-chip" data-prompt="Show me stock price for AAPL">Live
-                        Stock</button>
                 </div>
-                <form id="chat-form" class="composer">
+            </div>
+
+            <div class="chatgpt-composer-area">
+                <form id="chat-form" class="chatgpt-composer">
                     <label class="sr-only" for="message-input">Message</label>
-                    <div class="composer-input immersive">
+                    <div class="chatgpt-composer-inner">
                         <textarea id="message-input" name="message" rows="1"
-                            placeholder="Ask about SI, CI, SIP, loans, stocks..." required autofocus></textarea>
-                        <button class="icon-btn" type="submit" id="send-btn" title="Send Message">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            placeholder="Message Financial XAI…" required autofocus></textarea>
+                        <button class="chatgpt-send" type="submit" id="send-btn" title="Send">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <line x1="22" y1="2" x2="11" y2="13"></line>
                                 <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                             </svg>
                         </button>
                     </div>
+                    <div class="chatgpt-footer">
+                        Enter to send • Shift+Enter for a new line • Verify important info
+                    </div>
                 </form>
-                <div class="chat-footer">
-                    Enter to send • Shift+Enter for a new line • Financial XAI can make mistakes—verify important info.
-                </div>
             </div>
         </div>
     </main>
