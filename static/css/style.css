@@ -554,6 +554,204 @@ p {
 }
 
 /* ChatGPT-Style Chat Layout */
+.chatgpt-app {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    overflow: hidden;
+}
+
+.chatgpt-sidebar {
+    width: 284px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px 12px 12px;
+    background: rgba(5, 6, 11, 0.92);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px);
+}
+
+.chatgpt-sidebar-top {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.chatgpt-sidebar-new {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.88);
+    border-radius: 14px;
+    padding: 11px 12px;
+    font-weight: 950;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease), background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+
+.chatgpt-sidebar-new:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(102, 255, 209, 0.22);
+}
+
+.chatgpt-sidebar-section {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chatgpt-sidebar-heading {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 950;
+    padding: 6px 8px 0;
+}
+
+.chatgpt-history {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 2px;
+}
+
+.chatgpt-history::-webkit-scrollbar {
+    width: 10px;
+}
+
+.chatgpt-history::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border: 2px solid rgba(0, 0, 0, 0);
+    background-clip: padding-box;
+    border-radius: 999px;
+}
+
+.chatgpt-history-item {
+    width: 100%;
+    text-align: left;
+    border: 1px solid transparent;
+    background: transparent;
+    border-radius: 14px;
+    padding: 10px 10px 10px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.88);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+
+.chatgpt-history-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.chatgpt-history-item.active {
+    background: rgba(102, 255, 209, 0.08);
+    border-color: rgba(102, 255, 209, 0.18);
+}
+
+.chatgpt-history-title {
+    font-weight: 900;
+    font-size: 0.92rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chatgpt-history-meta {
+    flex-shrink: 0;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.45);
+    font-weight: 900;
+}
+
+.chatgpt-sidebar-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chatgpt-account {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chatgpt-account-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 950;
+    color: rgba(5, 6, 11, 0.95);
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.chatgpt-account-name {
+    font-weight: 950;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.1;
+}
+
+.chatgpt-account-sub {
+    margin-top: 4px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 900;
+}
+
+.chatgpt-account-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.chatgpt-account-link {
+    flex: 1;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.82);
+    text-decoration: none;
+    border-radius: 14px;
+    padding: 9px 10px;
+    font-weight: 950;
+    transition: transform 0.2s var(--ease), background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+
+.chatgpt-account-link:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(143, 179, 255, 0.22);
+}
+
+.chatgpt-overlay {
+    display: none;
+}
+
+.chatgpt-maincol {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
 .chatgpt-topbar {
     position: sticky;
     top: 0;
@@ -566,6 +764,26 @@ p {
     background: rgba(5, 6, 11, 0.88);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(16px);
+}
+
+.chatgpt-iconbtn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.86);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease), background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+
+.chatgpt-iconbtn:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.18);
 }
 
 .chatgpt-brand {
@@ -618,7 +836,7 @@ p {
 }
 
 .chatgpt-wrap {
-    height: calc(100vh - 56px);
+    flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -799,9 +1017,7 @@ p {
 
 /* ChatGPT Composer */
 .chatgpt-composer-area {
-    position: fixed;
-    left: 0;
-    right: 0;
+    position: sticky;
     bottom: 0;
     padding: 16px 18px 18px;
     background: linear-gradient(to top, rgba(5, 6, 11, 0.94) 70%, rgba(5, 6, 11, 0));
@@ -932,6 +1148,36 @@ p {
     .trust-grid { grid-template-columns: 1fr; }
     .eco-grid { grid-template-columns: 1fr; }
     .chatgpt-scroll { padding: 18px 14px 140px; }
+}
+
+@media (max-width: 900px) {
+    .chatgpt-sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        transform: translateX(-105%);
+        transition: transform 0.22s var(--ease);
+        z-index: 70;
+        box-shadow: 0 30px 100px rgba(0, 0, 0, 0.65);
+    }
+
+    body.sidebar-open .chatgpt-sidebar {
+        transform: translateX(0);
+    }
+
+    .chatgpt-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 60;
+        border: none;
+        cursor: pointer;
+    }
+
+    body.sidebar-open .chatgpt-overlay {
+        display: block;
+    }
 }
 
 @media (max-width: 640px) {
