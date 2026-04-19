@@ -2,13 +2,19 @@ const form = document.getElementById("chat-form");
 const input = document.getElementById("message-input");
 const messages = document.getElementById("messages");
 const resetButton = document.getElementById("reset-btn");
+const sidebarNewChatButton = document.getElementById("sidebar-new-chat");
 const sendBtn = document.getElementById("send-btn");
 const navLinks = document.querySelectorAll('a[href^="#"]');
-const suggestions = document.getElementById("suggestions");
-const suggestionButtons = document.querySelectorAll("[data-prompt]");
+const historyList = document.getElementById("history-list");
+const sidebarToggle = document.getElementById("sidebar-toggle");
+const sidebarOverlay = document.getElementById("sidebar-overlay");
 
-let conversation = null;
 let typingNode = null;
+
+const STORAGE_KEY = "financial_xai_chat_history_v1";
+
+let sessions = [];
+let activeSessionId = null;
 
 function isSafeLinkHref(rawHref) {
     if (!rawHref) return false;
@@ -223,12 +229,177 @@ function ensureScrollToBottom() {
     scroll.scrollTop = scroll.scrollHeight;
 }
 
-function hideSuggestions() {
-    if (suggestions) suggestions.style.display = "none";
+function safeJsonParse(text, fallback) {
+    try {
+        return JSON.parse(text);
+    } catch {
+        return fallback;
+    }
 }
 
-function showSuggestions() {
-    if (suggestions) suggestions.style.display = "";
+function loadFromStorage() {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const parsed = safeJsonParse(raw ?? "", null);
+    if (!parsed || typeof parsed !== "object") return { sessions: [], activeSessionId: null };
+
+    const storedSessions = Array.isArray(parsed.sessions) ? parsed.sessions : [];
+    const storedActive = typeof parsed.activeSessionId === "string" ? parsed.activeSessionId : null;
+
+    return { sessions: storedSessions, activeSessionId: storedActive };
+}
+
+function saveToStorage() {
+    try {
+        window.localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({ sessions, activeSessionId })
+        );
+    } catch {
+        // ignore quota / storage errors
+    }
+}
+
+function uid() {
+    return `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getSessionById(id) {
+    return sessions.find((s) => s && s.id === id) || null;
+}
+
+function getActiveSession() {
+    return activeSessionId ? getSessionById(activeSessionId) : null;
+}
+
+function sessionFirstUserText(session) {
+    const msgs = Array.isArray(session?.messages) ? session.messages : [];
+    const firstUser = msgs.find((m) => m && m.role === "user" && typeof m.text === "string" && m.text.trim());
+    return firstUser ? firstUser.text.trim() : "";
+}
+
+function deriveSessionTitle(session) {
+    const first = sessionFirstUserText(session);
+    if (!first) return "New chat";
+    const oneLine = first.replace(/\s+/g, " ");
+    return oneLine.length > 34 ? `${oneLine.slice(0, 34)}…` : oneLine;
+}
+
+function upsertSession(session) {
+    const idx = sessions.findIndex((s) => s && s.id === session.id);
+    if (idx >= 0) sessions[idx] = session;
+    else sessions.unshift(session);
+}
+
+function sortSessionsInPlace() {
+    sessions.sort((a, b) => {
+        const at = typeof a?.updatedAt === "number" ? a.updatedAt : 0;
+        const bt = typeof b?.updatedAt === "number" ? b.updatedAt : 0;
+        return bt - at;
+    });
+}
+
+function formatRelativeTime(ts) {
+    if (!ts) return "";
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `${days}d`;
+}
+
+function openSidebar(open) {
+    document.body.classList.toggle("sidebar-open", Boolean(open));
+}
+
+function renderHistory() {
+    if (!historyList) return;
+    historyList.innerHTML = "";
+
+    sessions.forEach((s) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "chatgpt-history-item";
+        if (s.id === activeSessionId) btn.classList.add("active");
+        btn.dataset.sessionId = s.id;
+
+        const title = document.createElement("div");
+        title.className = "chatgpt-history-title";
+        title.textContent = s.title || deriveSessionTitle(s);
+
+        const meta = document.createElement("div");
+        meta.className = "chatgpt-history-meta";
+        meta.textContent = formatRelativeTime(s.updatedAt);
+
+        btn.appendChild(title);
+        btn.appendChild(meta);
+        historyList.appendChild(btn);
+    });
+}
+
+function setActiveSession(id) {
+    activeSessionId = id;
+    saveToStorage();
+    renderHistory();
+}
+
+function makeWelcomeMessage() {
+    return {
+        role: "assistant",
+        text: "Hello! I’m your Financial XAI Assistant.\n\nTry one of these:\n- Loan check (income + credit score)\n- Compound interest for 5 years\n- Live stock price for AAPL",
+    };
+}
+
+function renderSuggestionsBlock() {
+    const wrap = document.createElement("div");
+    wrap.className = "chatgpt-suggestions";
+    wrap.id = "suggestions";
+    wrap.setAttribute("aria-label", "Suggested prompts");
+
+    const mk = (title, sub, prompt) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "chatgpt-suggestion";
+        b.dataset.prompt = prompt;
+
+        const t = document.createElement("div");
+        t.className = "chatgpt-suggestion-title";
+        t.textContent = title;
+
+        const s = document.createElement("div");
+        s.className = "chatgpt-suggestion-sub";
+        s.textContent = sub;
+
+        b.appendChild(t);
+        b.appendChild(s);
+        return b;
+    };
+
+    wrap.appendChild(
+        mk(
+            "Loan check",
+            "Eligibility + factors",
+            "My income is 85000, credit score is 742, loan amount is 1200000"
+        )
+    );
+    wrap.appendChild(
+        mk(
+            "Interest math",
+            "SI/CI explanations",
+            "Compound interest on 150000 at 10% for 5 years"
+        )
+    );
+    wrap.appendChild(
+        mk(
+            "Live stock",
+            "yfinance snapshot",
+            "Show me stock price for AAPL"
+        )
+    );
+
+    return wrap;
 }
 
 /* Smooth scroll for in-page links */
@@ -280,6 +451,11 @@ function appendMessage(role, text) {
 
     if (messages) {
         messages.appendChild(wrapper);
+        try {
+            observer.observe(wrapper);
+        } catch {
+            // ignore
+        }
         
         // Trigger transition
         requestAnimationFrame(() => {
@@ -287,6 +463,26 @@ function appendMessage(role, text) {
         });
         ensureScrollToBottom();
     }
+}
+
+function renderConversationFromSession(session) {
+    if (!messages) return;
+    messages.innerHTML = "";
+
+    const msgs = Array.isArray(session?.messages) ? session.messages : [];
+    if (!msgs.length) {
+        const welcome = makeWelcomeMessage();
+        appendMessage("assistant", welcome.text);
+        const last = messages.lastElementChild;
+        const bubble = last?.querySelector?.(".chatgpt-bubble");
+        if (bubble) bubble.appendChild(renderSuggestionsBlock());
+        return;
+    }
+
+    msgs.forEach((m) => {
+        if (!m || typeof m.text !== "string") return;
+        appendMessage(m.role === "user" ? "user" : "assistant", m.text);
+    });
 }
 
 function addTyping() {
@@ -329,7 +525,20 @@ function removeTyping() {
 }
 
 async function sendMessage(message) {
-    hideSuggestions();
+    const session = getActiveSession();
+    if (!session) return;
+
+    const userMsg = { role: "user", text: message, ts: Date.now() };
+    session.messages = Array.isArray(session.messages) ? session.messages : [];
+    session.messages.push(userMsg);
+
+    session.updatedAt = Date.now();
+    session.title = session.title || deriveSessionTitle(session);
+    upsertSession(session);
+    sortSessionsInPlace();
+    setActiveSession(session.id);
+    saveToStorage();
+
     appendMessage("user", message);
     addTyping();
     input.value = "";
@@ -340,15 +549,30 @@ async function sendMessage(message) {
         const response = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, conversation }),
+            body: JSON.stringify({ message, conversation: session.conversation ?? null }),
         });
 
         if (!response.ok) throw new Error("Backend error");
 
         const payload = await response.json();
-        conversation = payload.conversation;
+        session.conversation = payload.conversation ?? null;
         removeTyping();
-        appendMessage("assistant", payload.reply_markdown);
+
+        const assistantText = String(payload.reply_markdown ?? "");
+        appendMessage("assistant", assistantText);
+
+        const liveSession = getSessionById(activeSessionId);
+        if (liveSession) {
+            liveSession.messages = Array.isArray(liveSession.messages) ? liveSession.messages : [];
+            liveSession.messages.push({ role: "assistant", text: assistantText, ts: Date.now() });
+            liveSession.updatedAt = Date.now();
+            liveSession.title = deriveSessionTitle(liveSession);
+            liveSession.conversation = session.conversation ?? null;
+            upsertSession(liveSession);
+            sortSessionsInPlace();
+            saveToStorage();
+            renderHistory();
+        }
     } catch (error) {
         removeTyping();
         appendMessage(
@@ -390,30 +614,106 @@ if (form && input) {
     });
 }
 
-suggestionButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-        if (!input) return;
-        const prompt = btn.dataset.prompt ?? "";
-        if (!prompt) return;
-        input.value = prompt;
-        input.style.height = "auto";
-        input.style.height = (input.scrollHeight) + "px";
-        input.focus();
-    });
+document.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target.closest("[data-prompt]") : null;
+    if (!target) return;
+    if (!input) return;
+    const prompt = target.getAttribute("data-prompt") ?? "";
+    if (!prompt) return;
+    input.value = prompt;
+    input.style.height = "auto";
+    input.style.height = (input.scrollHeight) + "px";
+    input.focus();
 });
+
+if (historyList) {
+    historyList.addEventListener("click", (event) => {
+        const target = event.target instanceof Element ? event.target.closest("[data-session-id]") : null;
+        if (!target) return;
+        const id = target.getAttribute("data-session-id");
+        if (!id) return;
+        setActiveSession(id);
+        const session = getActiveSession();
+        renderConversationFromSession(session);
+        ensureScrollToBottom();
+        openSidebar(false);
+    });
+}
 
 if (resetButton) {
     resetButton.addEventListener("click", () => {
-        conversation = null;
-        if (messages) messages.innerHTML = "";
-        showSuggestions();
-        appendMessage(
-            "assistant",
-            "New chat started.\n\nTry a prompt, for example:\n- Loan eligibility with income + credit score\n- Compound interest for 5 years\n- Live stock price for AAPL"
-        );
+        startNewChat();
+    });
+}
+
+function startNewChat() {
+    const newSession = {
+        id: uid(),
+        title: "New chat",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        messages: [],
+        conversation: null,
+    };
+    sessions.unshift(newSession);
+    activeSessionId = newSession.id;
+    saveToStorage();
+    sortSessionsInPlace();
+    renderHistory();
+    renderConversationFromSession(newSession);
+    ensureScrollToBottom();
+    openSidebar(false);
+}
+
+if (sidebarNewChatButton) {
+    sidebarNewChatButton.addEventListener("click", () => {
+        startNewChat();
+    });
+}
+
+if (sidebarToggle) {
+    sidebarToggle.addEventListener("click", () => {
+        openSidebar(!document.body.classList.contains("sidebar-open"));
+    });
+}
+
+if (sidebarOverlay) {
+    sidebarOverlay.addEventListener("click", () => {
+        openSidebar(false);
     });
 }
 
 // Initial state
 setComposerEnabled(true);
-ensureScrollToBottom();
+(() => {
+    const loaded = loadFromStorage();
+    sessions = Array.isArray(loaded.sessions) ? loaded.sessions : [];
+    activeSessionId = typeof loaded.activeSessionId === "string" ? loaded.activeSessionId : null;
+
+    // Normalize
+    sessions = sessions
+        .filter((s) => s && typeof s.id === "string")
+        .map((s) => ({
+            id: s.id,
+            title: typeof s.title === "string" ? s.title : deriveSessionTitle(s),
+            createdAt: typeof s.createdAt === "number" ? s.createdAt : Date.now(),
+            updatedAt: typeof s.updatedAt === "number" ? s.updatedAt : Date.now(),
+            messages: Array.isArray(s.messages) ? s.messages.filter((m) => m && typeof m.text === "string") : [],
+            conversation: typeof s.conversation !== "undefined" ? s.conversation : null,
+        }));
+    sortSessionsInPlace();
+
+    if (!activeSessionId || !getSessionById(activeSessionId)) {
+        if (sessions.length) activeSessionId = sessions[0].id;
+        else {
+            const seed = { id: uid(), title: "New chat", createdAt: Date.now(), updatedAt: Date.now(), messages: [], conversation: null };
+            sessions.unshift(seed);
+            activeSessionId = seed.id;
+        }
+    }
+
+    renderHistory();
+    setActiveSession(activeSessionId);
+    renderConversationFromSession(getActiveSession());
+    ensureScrollToBottom();
+})();
