@@ -9,6 +9,219 @@ const navLinks = document.querySelectorAll('a[href^="#"]');
 let conversation = null;
 let typingNode = null;
 
+function isSafeLinkHref(rawHref) {
+    if (!rawHref) return false;
+    const trimmed = String(rawHref).trim();
+    if (!trimmed) return false;
+
+    try {
+        const url = new URL(trimmed, window.location.href);
+        return ["http:", "https:", "mailto:", "tel:"].includes(url.protocol);
+    } catch {
+        return false;
+    }
+}
+
+function renderInline(parent, text) {
+    const source = String(text ?? "");
+    const codeRegex = /`([^`]+)`/g;
+    let lastIndex = 0;
+    let match;
+
+    const appendEmphasisAndLinks = (node, chunk) => {
+        const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+        let linkLastIndex = 0;
+        let linkMatch;
+
+        const appendStrongEm = (node2, segment) => {
+            const boldRegex = /\*\*([^*]+)\*\*/g;
+            let boldLastIndex = 0;
+            let boldMatch;
+
+            while ((boldMatch = boldRegex.exec(segment)) !== null) {
+                const before = segment.slice(boldLastIndex, boldMatch.index);
+                if (before) node2.appendChild(document.createTextNode(before));
+
+                const strong = document.createElement("strong");
+                strong.textContent = boldMatch[1];
+                node2.appendChild(strong);
+                boldLastIndex = boldMatch.index + boldMatch[0].length;
+            }
+
+            const remaining = segment.slice(boldLastIndex);
+            if (remaining) node2.appendChild(document.createTextNode(remaining));
+        };
+
+        while ((linkMatch = linkRegex.exec(chunk)) !== null) {
+            const before = chunk.slice(linkLastIndex, linkMatch.index);
+            if (before) appendStrongEm(node, before);
+
+            const label = linkMatch[1];
+            const href = linkMatch[2];
+
+            if (isSafeLinkHref(href)) {
+                const a = document.createElement("a");
+                a.href = href;
+                a.target = "_blank";
+                a.rel = "noreferrer noopener";
+                a.textContent = label;
+                node.appendChild(a);
+            } else {
+                appendStrongEm(node, linkMatch[0]);
+            }
+
+            linkLastIndex = linkMatch.index + linkMatch[0].length;
+        }
+
+        const remaining = chunk.slice(linkLastIndex);
+        if (remaining) appendStrongEm(node, remaining);
+    };
+
+    while ((match = codeRegex.exec(source)) !== null) {
+        const before = source.slice(lastIndex, match.index);
+        if (before) appendEmphasisAndLinks(parent, before);
+
+        const code = document.createElement("code");
+        code.textContent = match[1];
+        parent.appendChild(code);
+
+        lastIndex = match.index + match[0].length;
+    }
+
+    const remaining = source.slice(lastIndex);
+    if (remaining) appendEmphasisAndLinks(parent, remaining);
+}
+
+function renderMarkdownToFragment(markdownText) {
+    const text = String(markdownText ?? "").replace(/\r\n?/g, "\n").trimEnd();
+    const lines = text.split("\n");
+    const fragment = document.createDocumentFragment();
+
+    const isFence = (line) => line.trimStart().startsWith("```");
+    const headingMatch = (line) => /^(#{1,3})\s+(.+)$/.exec(line.trim());
+    const isUL = (line) => /^(\s*[-*])\s+/.test(line);
+    const isOL = (line) => /^\s*\d+\.\s+/.test(line);
+    const isQuote = (line) => /^\s*>\s+/.test(line);
+
+    let i = 0;
+    while (i < lines.length) {
+        const line = lines[i];
+        const trimmed = line.trim();
+
+        if (!trimmed) {
+            i += 1;
+            continue;
+        }
+
+        if (isFence(line)) {
+            const fenceLine = line.trimStart();
+            const lang = fenceLine.slice(3).trim() || null;
+            i += 1;
+            const codeLines = [];
+            while (i < lines.length && !isFence(lines[i])) {
+                codeLines.push(lines[i]);
+                i += 1;
+            }
+            if (i < lines.length) i += 1; // consume closing fence
+
+            const pre = document.createElement("pre");
+            pre.className = "md-pre";
+            const code = document.createElement("code");
+            code.className = "md-code";
+            if (lang) code.dataset.lang = lang;
+            code.textContent = codeLines.join("\n");
+            pre.appendChild(code);
+            fragment.appendChild(pre);
+            continue;
+        }
+
+        const heading = headingMatch(line);
+        if (heading) {
+            const level = heading[1].length;
+            const tag = level === 1 ? "h3" : level === 2 ? "h4" : "h5";
+            const h = document.createElement(tag);
+            h.className = "md-heading";
+            renderInline(h, heading[2]);
+            fragment.appendChild(h);
+            i += 1;
+            continue;
+        }
+
+        if (isQuote(line)) {
+            const quoteLines = [];
+            while (i < lines.length && isQuote(lines[i])) {
+                quoteLines.push(lines[i].replace(/^\s*>\s+/, ""));
+                i += 1;
+            }
+            const blockquote = document.createElement("blockquote");
+            blockquote.className = "md-quote";
+            const p = document.createElement("p");
+            p.className = "md-p";
+            quoteLines.forEach((qLine, idx) => {
+                if (idx) p.appendChild(document.createElement("br"));
+                renderInline(p, qLine);
+            });
+            blockquote.appendChild(p);
+            fragment.appendChild(blockquote);
+            continue;
+        }
+
+        if (isUL(line) || isOL(line)) {
+            const ordered = isOL(line);
+            const list = document.createElement(ordered ? "ol" : "ul");
+            list.className = "md-list";
+
+            while (i < lines.length) {
+                const itemLine = lines[i];
+                if (!(ordered ? isOL(itemLine) : isUL(itemLine))) break;
+
+                const content = ordered
+                    ? itemLine.replace(/^\s*\d+\.\s+/, "")
+                    : itemLine.replace(/^\s*[-*]\s+/, "");
+                const li = document.createElement("li");
+                li.className = "md-li";
+                renderInline(li, content);
+                list.appendChild(li);
+                i += 1;
+            }
+
+            fragment.appendChild(list);
+            continue;
+        }
+
+        // Paragraph
+        const paraLines = [];
+        while (i < lines.length) {
+            const l = lines[i];
+            if (!l.trim()) break;
+            if (isFence(l) || headingMatch(l) || isUL(l) || isOL(l) || isQuote(l)) break;
+            paraLines.push(l);
+            i += 1;
+        }
+
+        const p = document.createElement("p");
+        p.className = "md-p";
+        paraLines.forEach((pLine, idx) => {
+            if (idx) p.appendChild(document.createElement("br"));
+            renderInline(p, pLine);
+        });
+        fragment.appendChild(p);
+    }
+
+    return fragment;
+}
+
+function setComposerEnabled(enabled) {
+    if (input) input.disabled = !enabled;
+    if (sendBtn) sendBtn.disabled = !enabled || !input?.value?.trim();
+}
+
+function ensureScrollToBottom() {
+    const messagesContainer = document.querySelector(".messages-container");
+    if (!messagesContainer) return;
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
 /* Smooth scroll for in-page links */
 navLinks.forEach((link) => {
     link.addEventListener("click", (e) => {
@@ -36,43 +249,52 @@ document.querySelectorAll(".fade").forEach((el) => observer.observe(el));
 
 function appendMessage(role, text) {
     const wrapper = document.createElement("article");
-    wrapper.className = `message ${role}`;
+    wrapper.className = `message ${role} fade`;
+
+    const inner = document.createElement("div");
+    inner.className = "message-inner";
 
     if (role === "assistant") {
         const label = document.createElement("div");
         label.className = "message-label";
         label.textContent = "Assistant";
-        wrapper.appendChild(label);
-
-        const body = document.createElement("pre");
-        body.className = "message-body";
-        wrapper.textContent = text;
-    } else {
-        wrapper.textContent = text;
+        inner.appendChild(label);
     }
+
+    const body = document.createElement("div");
+    body.className = "message-body";
+    if (role === "assistant") {
+        body.appendChild(renderMarkdownToFragment(text));
+    } else {
+        body.textContent = text;
+    }
+    inner.appendChild(body);
+
+    wrapper.appendChild(inner);
 
     if (messages) {
         messages.appendChild(wrapper);
         
         // Trigger transition
         requestAnimationFrame(() => {
-            wrapper.style.opacity = "1";
-            wrapper.style.transform = "translateY(0)";
+            wrapper.classList.add("visible");
         });
-
-        messages.scrollTop = messages.scrollHeight;
+        ensureScrollToBottom();
     }
 }
 
 function addTyping() {
     removeTyping();
     const wrap = document.createElement("article");
-    wrap.className = "message assistant typing";
+    wrap.className = "message assistant typing fade visible";
+
+    const inner = document.createElement("div");
+    inner.className = "message-inner";
 
     const label = document.createElement("div");
     label.className = "message-label";
     label.textContent = "Assistant";
-    wrap.appendChild(label);
+    inner.appendChild(label);
 
     const dots = document.createElement("div");
     dots.style.display = "flex";
@@ -82,10 +304,14 @@ function addTyping() {
         d.className = "typing-dot";
         dots.appendChild(d);
     });
-    wrap.appendChild(dots);
+    inner.appendChild(dots);
+    
+    wrap.appendChild(inner);
 
-    messages.appendChild(wrap);
-    messages.scrollTop = messages.scrollHeight;
+    if (messages) {
+        messages.appendChild(wrap);
+        ensureScrollToBottom();
+    }
     typingNode = wrap;
 }
 
@@ -101,8 +327,7 @@ async function sendMessage(message) {
     addTyping();
     input.value = "";
     input.style.height = "auto";
-    sendBtn.disabled = true;
-    sendBtn.textContent = "Sending…";
+    setComposerEnabled(false);
 
     try {
         const response = await fetch("/api/chat", {
@@ -124,8 +349,7 @@ async function sendMessage(message) {
             "The system encountered an error. Please confirm the Flask backend is running on port 5000."
         );
     } finally {
-        sendBtn.disabled = false;
-        sendBtn.textContent = "Send";
+        setComposerEnabled(true);
     }
 }
 
@@ -136,11 +360,9 @@ if (form && input) {
         const message = input.value.trim();
         if (!message) return;
 
-        input.disabled = true;
         try {
             await sendMessage(message);
         } finally {
-            input.disabled = false;
             input.focus();
         }
     });
@@ -149,6 +371,15 @@ if (form && input) {
     input.addEventListener("input", function() {
         this.style.height = "auto";
         this.style.height = (this.scrollHeight) + "px";
+        if (sendBtn) sendBtn.disabled = !this.value.trim() || this.disabled;
+    });
+
+    // Enter to send, Shift+Enter for newline
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            form.requestSubmit();
+        }
     });
 }
 
@@ -169,3 +400,7 @@ if (resetButton) {
         appendMessage("assistant", "Experience reset. How can I help you today?");
     });
 }
+
+// Initial state
+setComposerEnabled(true);
+ensureScrollToBottom();
