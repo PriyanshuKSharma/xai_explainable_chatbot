@@ -14,67 +14,79 @@
 </head>
 
 <body class="chat-page">
-    <header class="chatgpt-topbar">
-        <a class="chatgpt-brand" href="/">XAI.Finance</a>
-        <div class="chatgpt-topbar-actions">
-            <a class="chatgpt-link" href="/info" target="_blank" rel="noreferrer">API</a>
-            <button id="reset-btn" type="button" class="chatgpt-btn">New chat</button>
-        </div>
-    </header>
+    <div class="chatgpt-app">
+        <aside class="chatgpt-sidebar" aria-label="Sidebar">
+            <div class="chatgpt-sidebar-top">
+                <button id="sidebar-new-chat" type="button" class="chatgpt-sidebar-new">New chat</button>
+            </div>
 
-    <main class="chatgpt-main">
-        <div class="chatgpt-wrap" aria-label="Chat console">
-            <div class="chatgpt-scroll" role="log" aria-live="polite">
-                <div id="messages" class="chatgpt-messages">
-                    <div class="chatgpt-message assistant">
-                        <div class="chatgpt-avatar" aria-hidden="true">A</div>
-                        <div class="chatgpt-bubble">
-                            <div class="chatgpt-content">
-                                <p class="md-p">Hello! I'm your Financial XAI Assistant.</p>
-                                <p class="md-p">Try one of these:</p>
-                            </div>
-                            <div id="suggestions" class="chatgpt-suggestions" aria-label="Suggested prompts">
-                                <button type="button" class="chatgpt-suggestion"
-                                    data-prompt="My income is 85000, credit score is 742, loan amount is 1200000">
-                                    <div class="chatgpt-suggestion-title">Loan check</div>
-                                    <div class="chatgpt-suggestion-sub">Eligibility + factors</div>
-                                </button>
-                                <button type="button" class="chatgpt-suggestion"
-                                    data-prompt="Compound interest on 150000 at 10% for 5 years">
-                                    <div class="chatgpt-suggestion-title">Interest math</div>
-                                    <div class="chatgpt-suggestion-sub">SI/CI explanations</div>
-                                </button>
-                                <button type="button" class="chatgpt-suggestion" data-prompt="Show me stock price for AAPL">
-                                    <div class="chatgpt-suggestion-title">Live stock</div>
-                                    <div class="chatgpt-suggestion-sub">yfinance snapshot</div>
-                                </button>
-                            </div>
-                        </div>
+            <div class="chatgpt-sidebar-section">
+                <div class="chatgpt-sidebar-heading">Chats</div>
+                <div id="history-list" class="chatgpt-history" aria-label="Chat history"></div>
+            </div>
+
+            <div class="chatgpt-sidebar-bottom">
+                <div class="chatgpt-account" aria-label="Account">
+                    <div class="chatgpt-account-avatar" aria-hidden="true">G</div>
+                    <div class="chatgpt-account-meta">
+                        <div class="chatgpt-account-name">Guest</div>
+                        <div class="chatgpt-account-sub">Local history</div>
                     </div>
                 </div>
+                <div class="chatgpt-account-actions">
+                    <a class="chatgpt-account-link" href="/" title="Back to home">Home</a>
+                    <a class="chatgpt-account-link" href="/info" target="_blank" rel="noreferrer" title="API info">API</a>
+                </div>
             </div>
+        </aside>
 
-            <div class="chatgpt-composer-area">
-                <form id="chat-form" class="chatgpt-composer">
-                    <label class="sr-only" for="message-input">Message</label>
-                    <div class="chatgpt-composer-inner">
-                        <textarea id="message-input" name="message" rows="1"
-                            placeholder="Message Financial XAI…" required autofocus></textarea>
-                        <button class="chatgpt-send" type="submit" id="send-btn" title="Send">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <line x1="22" y1="2" x2="11" y2="13"></line>
-                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                            </svg>
-                        </button>
+        <button id="sidebar-overlay" class="chatgpt-overlay" type="button" aria-label="Close sidebar"></button>
+
+        <div class="chatgpt-maincol">
+            <header class="chatgpt-topbar">
+                <button id="sidebar-toggle" type="button" class="chatgpt-iconbtn" aria-label="Toggle sidebar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="4" y1="6" x2="20" y2="6"></line>
+                        <line x1="4" y1="12" x2="20" y2="12"></line>
+                        <line x1="4" y1="18" x2="20" y2="18"></line>
+                    </svg>
+                </button>
+                <a class="chatgpt-brand" href="/">XAI.Finance</a>
+                <div class="chatgpt-topbar-actions">
+                    <button id="reset-btn" type="button" class="chatgpt-btn">New chat</button>
+                </div>
+            </header>
+
+            <main class="chatgpt-main">
+                <div class="chatgpt-wrap" aria-label="Chat console">
+                    <div class="chatgpt-scroll" role="log" aria-live="polite">
+                        <div id="messages" class="chatgpt-messages"></div>
                     </div>
-                    <div class="chatgpt-footer">
-                        Enter to send • Shift+Enter for a new line • Verify important info
+
+                    <div class="chatgpt-composer-area">
+                        <form id="chat-form" class="chatgpt-composer">
+                            <label class="sr-only" for="message-input">Message</label>
+                            <div class="chatgpt-composer-inner">
+                                <textarea id="message-input" name="message" rows="1"
+                                    placeholder="Message Financial XAI…" required autofocus></textarea>
+                                <button class="chatgpt-send" type="submit" id="send-btn" title="Send">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="chatgpt-footer">
+                                Enter to send • Shift+Enter for a new line • Verify important info
+                            </div>
+                        </form>
                     </div>
-                </form>
-            </div>
+                </div>
+            </main>
         </div>
-    </main>
+    </div>
 
     <script src="/static/js/app.js"></script>
 </body>
