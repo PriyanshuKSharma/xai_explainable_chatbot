@@ -52,6 +52,14 @@ Backend URL:
 http://127.0.0.1:5000/chat
 ```
 
+## Streamlit Cloud deploy note
+
+If you deploy only the Streamlit app (without deploying Flask), `FINANCIAL_XAI_BACKEND_URL=http://127.0.0.1:5000/chat` will fail on Streamlit Cloud.
+
+Options:
+- Run in-process (recommended on Streamlit Cloud): set `FINANCIAL_XAI_BACKEND_MODE=local` in Streamlit secrets.
+- Or deploy `app.py` separately (Render/Fly/Railway/etc.) and set `FINANCIAL_XAI_BACKEND_URL` to that public URL in Streamlit secrets.
+
 ## Model file
 
 Place your trained model at:
