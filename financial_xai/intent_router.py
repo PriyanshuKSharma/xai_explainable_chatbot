@@ -69,6 +69,11 @@ def detect_intent(message: str, state: ConversationState | None = None) -> Finan
 
     if _find_ticker(message) and any(word in lowered for word in ("price", "quote", "stock", "share", "market")):
         return FinancialIntent.STOCK_GUIDANCE
+    education_markers = KEYWORDS.get(FinancialIntent.FINANCIAL_EDUCATION, ())
+    if any(marker in lowered for marker in education_markers):
+        looks_like_lookup = any(word in lowered for word in ("price", "quote", "rate", "roi", "yield")) or re.search(r"\d", lowered)
+        if not looks_like_lookup:
+            return FinancialIntent.FINANCIAL_EDUCATION
     if "compound" in lowered:
         return FinancialIntent.COMPOUND_INTEREST
     if "simple interest" in lowered:
@@ -212,6 +217,17 @@ def _find_stock_view(text: str) -> str | None:
     return None
 
 
+def _find_bank(text: str) -> str | None:
+    match = re.search(
+        r"\b(SBI|HDFC|ICICI|AXIS|KOTAK|PNB|BOB|CANARA|IDFC|YES|INDUSIND)\b",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if not match:
+        return None
+    return match.group(1).upper()
+
+
 def _find_ticker(text: str) -> str | None:
     protected_words = {
         "loan",
@@ -335,6 +351,17 @@ def extract_slots(message: str, intent: FinancialIntent) -> dict[str, Any]:
             slots["loan_term_years"] = years
 
     if intent == FinancialIntent.BANK_PLAN_COMPARISON:
+        lowered = message.lower()
+        product_type = None
+        if "fixed deposit" in lowered or re.search(r"\bfd\b", lowered):
+            product_type = "FD"
+        elif "recurring deposit" in lowered or re.search(r"\brd\b", lowered):
+            product_type = "RD"
+        elif "savings" in lowered:
+            product_type = "SAVINGS"
+
+        bank = _find_bank(message)
+
         lump_sum = _find_first(
             [
                 r"(?:lump sum|deposit|invest once)\D{0,15}([0-9][0-9,]*(?:\.[0-9]+)?)",
@@ -353,6 +380,10 @@ def extract_slots(message: str, intent: FinancialIntent) -> dict[str, Any]:
             slots["lump_sum"] = lump_sum
         if monthly_amount is not None:
             slots["monthly_amount"] = monthly_amount
+        if product_type is not None:
+            slots["product_type"] = product_type
+        if bank is not None:
+            slots["bank"] = bank
 
     if intent == FinancialIntent.STOCK_GUIDANCE:
         stock_view = _find_stock_view(message)
