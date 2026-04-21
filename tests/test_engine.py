@@ -66,3 +66,20 @@ def test_stock_query_returns_live_snapshot_when_service_available() -> None:
     assert response.metadata["ticker"] == "AAPL"
     assert response.metadata["chart_url"].startswith("/api/stock/chart?ticker=AAPL")
     assert "![AAPL price chart](" in response.reply_markdown
+
+
+def test_stock_definition_routes_to_education() -> None:
+    engine = FinancialAssistantEngine(stock_data_service=FakeStockService())
+    response = engine.respond(ChatRequest(message="What is a stock?"))
+
+    assert response.intent == FinancialIntent.FINANCIAL_EDUCATION
+    assert "ownership" in response.answer.result.lower()
+
+
+def test_bank_fd_rate_lookup_uses_dataset() -> None:
+    engine = FinancialAssistantEngine(stock_data_service=FakeStockService())
+    response = engine.respond(ChatRequest(message="FD interest rate in SBI for 2 years"))
+
+    assert response.intent == FinancialIntent.BANK_PLAN_COMPARISON
+    assert "SBI FD rate" in response.answer.result
+    assert response.metadata["bank_rates"][0]["bank"] == "SBI"
