@@ -8,6 +8,8 @@ from typing import Any
 
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
+from urllib.parse import urljoin, urlparse
 
 from financial_xai.history import read_json, utc_now_iso, write_json
 
@@ -128,6 +130,9 @@ def autosave_chat_history() -> None:
 
 
 def render_bot_payload(payload: dict[str, Any]) -> None:
+    parsed_backend = urlparse(BACKEND_URL)
+    backend_base = f"{parsed_backend.scheme}://{parsed_backend.netloc}/"
+
     # Check for new format
     formatted = payload.get("formatted")
     if formatted:
@@ -156,7 +161,18 @@ def render_bot_payload(payload: dict[str, Any]) -> None:
                     df = pd.DataFrame(data["schedule"])
                     st.line_chart(df.set_index("year"))
             elif viz["type"] == "stock":
-                st.json(viz["data"])
+                data = viz.get("data") or {}
+                if isinstance(data, dict) and data.get("chart_url"):
+                    chart_url = urljoin(backend_base, str(data["chart_url"]))
+                    try:
+                        svg_resp = requests.get(chart_url, timeout=10)
+                        svg_resp.raise_for_status()
+                        components.html(svg_resp.text, height=300, scrolling=False)
+                    except requests.RequestException as exc:
+                        st.warning(f"Failed to load stock chart: {exc}")
+                        st.json(data)
+                else:
+                    st.json(data)
 
         if formatted.get("suggestion"):
             st.markdown("**Suggestion**")
