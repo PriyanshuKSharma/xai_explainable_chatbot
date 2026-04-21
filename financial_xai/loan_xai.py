@@ -6,6 +6,24 @@ from financial_xai.calculations import emi
 
 
 def assess_loan_application(data: dict[str, Any]) -> dict[str, Any]:
+    required = ["monthly_income", "credit_score", "loan_amount", "loan_term_years"]
+    missing = [key for key in required if key not in data or data.get(key) is None]
+    if missing:
+        return {
+            "prediction": "Needs review",
+            "approval_probability": 50.0,
+            "projected_emi": None,
+            "loan_to_annual_income": None,
+            "existing_debt_ratio": None,
+            "total_obligation_ratio": None,
+            "top_positive": [],
+            "top_negative": [f"Missing input: {key}." for key in missing][:2],
+            "global_insights": [
+                "This transparent loan scoring model needs basic inputs (income, credit score, loan amount, and term) to explain drivers reliably.",
+                "When key inputs are missing, the assistant should ask follow-up questions instead of guessing.",
+            ],
+        }
+
     monthly_income = float(data["monthly_income"])
     credit_score = float(data["credit_score"])
     loan_amount = float(data["loan_amount"])
