@@ -63,10 +63,29 @@ def detect_intent(message: str, state: ConversationState | None = None) -> Finan
     scores = _score_intents(lowered)
     best_intent = max(scores, key=scores.get, default=FinancialIntent.GENERAL_FINANCE)
     best_score = scores.get(best_intent, 0)
+    loan_cues = (
+        "loan",
+        "borrow",
+        "emi",
+        "credit score",
+        "cibil",
+        "approval",
+        "approved",
+        "rejected",
+        "eligibility",
+        "eligible",
+        "monthly income",
+        "income",
+        "salary",
+    )
+    has_loan_signal = any(term in lowered for term in loan_cues)
 
     # Single-keyword queries are usually definitional, not live lookups.
     if trimmed in {"stock", "stocks", "share", "shares", "equity"}:
         return FinancialIntent.FINANCIAL_EDUCATION
+
+    if has_loan_signal:
+        return FinancialIntent.LOAN_ELIGIBILITY
 
     if state and state.active_intent and state.pending_questions:
         if best_score <= 1 or best_intent == state.active_intent:
