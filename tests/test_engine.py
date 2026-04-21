@@ -83,3 +83,13 @@ def test_bank_fd_rate_lookup_uses_dataset() -> None:
     assert response.intent == FinancialIntent.BANK_PLAN_COMPARISON
     assert "SBI FD rate" in response.answer.result
     assert response.metadata["bank_rates"][0]["bank"] == "SBI"
+
+
+def test_loan_rate_question_routes_to_loan_eligibility() -> None:
+    engine = FinancialAssistantEngine(stock_data_service=FakeStockService())
+    response = engine.respond(
+        ChatRequest(message="I earn 40,000 and want a loan of 2,00,000 for 3 years. What interest rate do I have to pay?")
+    )
+
+    assert response.intent == FinancialIntent.LOAN_ELIGIBILITY
+    assert "loan" in response.answer.result.lower() or response.follow_up_questions
