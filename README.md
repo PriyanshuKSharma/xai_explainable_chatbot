@@ -60,7 +60,19 @@ Place your trained model at:
 models/model.pkl
 ```
 
-Expected feature order used by the loader:
+### Training your own model
+
+This repo includes a training script that writes a compatible `models/model.pkl`:
+
+```bash
+./.venv/bin/python scripts/train_loan_model.py --data loan_data.csv --out models/model.pkl
+```
+
+By default it trains a `LogisticRegression` model and saves a *bundle* that includes the model plus `feature_order`.
+
+### Feature order
+
+If your `models/model.pkl` is a raw sklearn estimator, the backend uses this default feature order:
 
 1. `monthly_income`
 2. `credit_score`
@@ -69,6 +81,8 @@ Expected feature order used by the loader:
 5. `loan_term_years`
 6. `annual_rate`
 7. `employment_years`
+
+If your `models/model.pkl` is a bundle created by `scripts/train_loan_model.py`, the backend uses the bundle’s `feature_order` automatically (so it can train on a smaller schema like `Income/CreditScore/LoanAmount` too).
 
 If `model.pkl` is missing, the backend still runs by falling back to the transparent rule-based loan engine.
 
