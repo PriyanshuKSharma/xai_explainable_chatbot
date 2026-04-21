@@ -1027,6 +1027,16 @@ p {
     color: rgba(255, 255, 255, 0.82);
 }
 
+.md-img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin-top: 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.25);
+}
+
 .chatgpt-typing {
     display: flex;
     gap: 6px;
