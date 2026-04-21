@@ -8,7 +8,7 @@ This package contains the backend logic for the Financial Explainable AI Chatbot
 User message
   -> intent_router.py detects intent and extracts values
   -> engine.py selects the correct handler
-  -> calculations.py / modeling.py / stock_service.py run the domain logic
+  -> calculations.py / modeling.py / stock_service.py / bank_service.py run the domain logic
   -> formatting.py shapes the reply
   -> schemas.py defines the request and response objects
 ```
@@ -33,6 +33,7 @@ Handles natural-language routing.
 Its job is to:
 - detect whether the user is asking about loans, SI, CI, SIP, stocks, or bank plans
 - extract important values such as income, credit score, rate, years, SIP amount, and stock ticker
+- extract bank/product hints for dataset-backed FD/RD lookups (optional)
 - continue an active conversation when the assistant is asking follow-up questions
 
 ### `engine.py`
@@ -93,6 +94,13 @@ It returns a small stock snapshot such as:
 - rough risk level
 - timestamp
 
+It also supports generating an SVG price chart (used by `GET /api/stock/chart` in `app.py`).
+
+### `bank_service.py`
+Loads a local, editable bank-products dataset from `data/banks/bank_products.json`.
+
+This makes FD/RD rate answers explainable and reproducible (no live lookup required).
+
 ### `formatting.py`
 Formats output into the structured chatbot text block.
 
@@ -117,8 +125,9 @@ If you are new to this package, read files in this order:
 5. `modeling.py`
 6. `loan_xai.py`
 7. `stock_service.py`
-8. `formatting.py`
-9. `prompting.py`
+8. `bank_service.py`
+9. `formatting.py`
+10. `prompting.py`
 
 ## Notes
 
@@ -126,4 +135,5 @@ If you are new to this package, read files in this order:
 - `calculations.py` is the math layer.
 - `modeling.py` is the ML integration layer.
 - `loan_xai.py` is the explainability fallback.
-- `stock_service.py` is the live market data layer.
+- `stock_service.py` is the live market + chart layer.
+- `data/banks/bank_products.json` is the local bank dataset (sample values; update with your own).
