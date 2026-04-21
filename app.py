@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, Response, jsonify, request, render_template
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -88,6 +88,28 @@ def create_app() -> Flask:
                 pass
 
         return jsonify(response_payload), 200
+
+    @app.get("/api/stock/chart")
+    def stock_chart() -> Response:
+        ticker = str(request.args.get("ticker", "")).strip()
+        period = str(request.args.get("period", "1mo")).strip() or "1mo"
+        interval = str(request.args.get("interval", "1d")).strip() or "1d"
+
+        if not ticker:
+            return Response("ticker is required", status=400, mimetype="text/plain")
+
+        try:
+            svg = engine.stock_data_service.build_price_chart_svg(
+                ticker,
+                period=period,
+                interval=interval,
+            )
+        except Exception as exc:
+            return Response(str(exc), status=400, mimetype="text/plain")
+
+        resp = Response(svg, status=200, mimetype="image/svg+xml")
+        resp.headers["Cache-Control"] = "no-store"
+        return resp
 
     return app
 
