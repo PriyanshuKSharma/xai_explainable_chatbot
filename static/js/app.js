@@ -220,7 +220,12 @@ function renderMarkdownToFragment(markdownText) {
 
 function setComposerEnabled(enabled) {
     if (input) input.disabled = !enabled;
-    if (sendBtn) sendBtn.disabled = !enabled || !input?.value?.trim();
+    syncSendButtonState();
+}
+
+function syncSendButtonState() {
+    if (!sendBtn || !input) return;
+    sendBtn.disabled = Boolean(input.disabled) || !String(input.value ?? "").trim();
 }
 
 function ensureScrollToBottom() {
@@ -602,7 +607,7 @@ if (form && input) {
     input.addEventListener("input", function() {
         this.style.height = "auto";
         this.style.height = (this.scrollHeight) + "px";
-        if (sendBtn) sendBtn.disabled = !this.value.trim() || this.disabled;
+        syncSendButtonState();
     });
 
     // Enter to send, Shift+Enter for newline
@@ -623,6 +628,7 @@ document.addEventListener("click", (event) => {
     input.value = prompt;
     input.style.height = "auto";
     input.style.height = (input.scrollHeight) + "px";
+    syncSendButtonState();
     input.focus();
 });
 
