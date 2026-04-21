@@ -11,9 +11,14 @@ import streamlit as st
 import streamlit.components.v1 as components
 from urllib.parse import urljoin, urlparse
 
+from financial_xai.engine import FinancialAssistantEngine
+from financial_xai.schemas import ChatRequest
+from financial_xai.stock_service import StockDataService, StockDataError
+
 from financial_xai.history import read_json, utc_now_iso, write_json
 
 BACKEND_URL = os.getenv("FINANCIAL_XAI_BACKEND_URL", "http://127.0.0.1:5000/chat")
+BACKEND_MODE = os.getenv("FINANCIAL_XAI_BACKEND_MODE", "").strip().lower()  # "remote" | "local" | ""
 BASE_DIR = Path(__file__).resolve().parent
 CHAT_HISTORY_DIR = Path(os.getenv("FINANCIAL_XAI_CHAT_HISTORY_DIR", str(BASE_DIR / "data" / "chat_history")))
 LATEST_HISTORY_PATH = CHAT_HISTORY_DIR / "streamlit_latest.json"
@@ -39,6 +44,9 @@ EXAMPLE_PROMPTS = [
 
 
 st.set_page_config(page_title="Financial Explainable AI Chatbot", page_icon=":moneybag:", layout="wide")
+
+ENGINE = FinancialAssistantEngine()
+STOCKS = StockDataService()
 
 
 loaded_history: dict[str, Any] | None = None
@@ -131,7 +139,7 @@ def autosave_chat_history() -> None:
 
 def render_bot_payload(payload: dict[str, Any]) -> None:
     parsed_backend = urlparse(BACKEND_URL)
-    backend_base = f"{parsed_backend.scheme}://{parsed_backend.netloc}/"
+    backend_base = f"{parsed_backend.scheme}://{parsed_backend.netloc}/" if parsed_backend.scheme else ""
 
     # Check for new format
     formatted = payload.get("formatted")
@@ -170,6 +178,13 @@ def render_bot_payload(payload: dict[str, Any]) -> None:
                         components.html(svg_resp.text, height=300, scrolling=False)
                     except requests.RequestException as exc:
                         st.warning(f"Failed to load stock chart: {exc}")
+                        st.json(data)
+                elif isinstance(data, dict) and data.get("ticker"):
+                    # Local-mode fallback: render chart directly without relying on Flask endpoints.
+                    try:
+                        svg = STOCKS.build_price_chart_svg(str(data["ticker"]), period="1mo", interval="1d")
+                        components.html(svg, height=300, scrolling=False)
+                    except (StockDataError, Exception) as exc:
                         st.json(data)
                 else:
                     st.json(data)
@@ -211,6 +226,33 @@ def render_bot_payload(payload: dict[str, Any]) -> None:
     if metadata:
         with st.expander("Backend details"):
             st.json(metadata)
+
+
+def call_backend_or_local(user_input: str) -> dict[str, Any]:
+    """
+    Streamlit Cloud cannot reach a Flask backend on 127.0.0.1.
+    - If FINANCIAL_XAI_BACKEND_MODE=local: always run in-process.
+    - Otherwise: try BACKEND_URL; on failure fall back to in-process engine.
+    """
+    mode = BACKEND_MODE
+    if mode == "local":
+        resp = ENGINE.respond(ChatRequest(message=user_input, conversation=st.session_state.conversation))
+        return resp.model_dump(mode="json")
+
+    try:
+        parsed = urlparse(BACKEND_URL)
+        if parsed.hostname in {"127.0.0.1", "localhost"}:
+            raise requests.RequestException("BACKEND_URL points to localhost; using in-process engine instead.")
+        response = requests.post(
+            BACKEND_URL,
+            json={"message": user_input, "conversation": st.session_state.conversation},
+            timeout=20,
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException:
+        resp = ENGINE.respond(ChatRequest(message=user_input, conversation=st.session_state.conversation))
+        return resp.model_dump(mode="json")
 
 
 with st.sidebar:
@@ -270,26 +312,8 @@ if user_input:
     with st.chat_message("user"):
         st.write(user_input)
 
-    try:
-        response = requests.post(
-            BACKEND_URL,
-            json={"message": user_input, "conversation": st.session_state.conversation},
-            timeout=20,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        st.session_state.conversation = payload.get("conversation")
-    except requests.RequestException as exc:
-        payload = {
-            "answer": {
-                "result": "The backend request failed.",
-                "explanation": [f"Error: {exc}"],
-                "insight": ["Make sure the Flask backend is running on port 5000."],
-                "suggestion": ["Start the backend with python app.py and try again."],
-            },
-            "metadata": {},
-            "follow_up_questions": [],
-        }
+    payload = call_backend_or_local(user_input)
+    st.session_state.conversation = payload.get("conversation")
 
     st.session_state.messages.append({"role": "assistant", "payload": payload})
     autosave_chat_history()
