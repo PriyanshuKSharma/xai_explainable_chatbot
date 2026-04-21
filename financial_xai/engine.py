@@ -587,16 +587,23 @@ class FinancialAssistantEngine:
 
     def _handle_general_finance(self, _: str, __: dict[str, Any]) -> HandlerResult:
         answer = StructuredAnswer(
-            result="I can help with loan eligibility, simple interest, compound interest, SIP planning, stock guidance, and bank-plan comparison.",
+            result="I can help across the main finance topics: loans, interest, investing, stocks, and bank products.",
             explanation=[
-                "This Flask backend is built for a chat UI, so the response always includes a result, explanation, insight, and suggestion.",
-                "It asks follow-up questions when data is incomplete instead of inventing assumptions.",
-                "The system is ready for Streamlit frontend use, a trained loan model, and live stock APIs.",
+                "Loan support covers eligibility, EMI burden, credit score context, and explainable approval factors.",
+                "Interest support covers simple interest, compound interest, SIP projections, FD maturity, and RD maturity.",
+                "Investing support covers stocks, mutual funds, ETFs, inflation, and basic risk-versus-return guidance.",
+                "Bank-plan support compares FD, RD, and SIP-style choices using time horizon and risk appetite.",
             ],
-            insight=["Financial guidance becomes more useful when calculations and decision factors are visible instead of hidden."],
+            insight=[
+                "Finance becomes easier to understand when you split it into borrowing, saving, investing, and market risk.",
+                "I can give either a quick definition or a number-based calculation depending on what you ask.",
+            ],
             suggestion=[
-                "Try a prompt like: calculate compound interest on 100000 at 8 percent for 5 years.",
-                "Or ask: show me the stock price for AAPL.",
+                "Try: explain compound interest, calculate simple interest on 50000 at 9 percent for 3 years, or what is a stock.",
+                "You can also ask for loan eligibility, SIP projection, FD vs RD, or a live stock lookup.",
             ],
         )
-        return HandlerResult(answer=answer, follow_up_questions=["What would you like help with: loan eligibility, SI, CI, SIP, stocks, or bank plans?"])
+        return HandlerResult(
+            answer=answer,
+            follow_up_questions=["What would you like help with: loans, interest, investing, stocks, inflation, or bank plans?"],
+        )
