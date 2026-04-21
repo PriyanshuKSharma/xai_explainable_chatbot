@@ -35,29 +35,29 @@ function renderInline(parent, text) {
     let lastIndex = 0;
     let match;
 
-    const appendEmphasisAndLinks = (node, chunk) => {
+    const appendStrongEm = (node2, segment) => {
+        const boldRegex = /\*\*([^*]+)\*\*/g;
+        let boldLastIndex = 0;
+        let boldMatch;
+
+        while ((boldMatch = boldRegex.exec(segment)) !== null) {
+            const before = segment.slice(boldLastIndex, boldMatch.index);
+            if (before) node2.appendChild(document.createTextNode(before));
+
+            const strong = document.createElement("strong");
+            strong.textContent = boldMatch[1];
+            node2.appendChild(strong);
+            boldLastIndex = boldMatch.index + boldMatch[0].length;
+        }
+
+        const remaining = segment.slice(boldLastIndex);
+        if (remaining) node2.appendChild(document.createTextNode(remaining));
+    };
+
+    const appendLinksAndEmphasis = (node, chunk) => {
         const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
         let linkLastIndex = 0;
         let linkMatch;
-
-        const appendStrongEm = (node2, segment) => {
-            const boldRegex = /\*\*([^*]+)\*\*/g;
-            let boldLastIndex = 0;
-            let boldMatch;
-
-            while ((boldMatch = boldRegex.exec(segment)) !== null) {
-                const before = segment.slice(boldLastIndex, boldMatch.index);
-                if (before) node2.appendChild(document.createTextNode(before));
-
-                const strong = document.createElement("strong");
-                strong.textContent = boldMatch[1];
-                node2.appendChild(strong);
-                boldLastIndex = boldMatch.index + boldMatch[0].length;
-            }
-
-            const remaining = segment.slice(boldLastIndex);
-            if (remaining) node2.appendChild(document.createTextNode(remaining));
-        };
 
         while ((linkMatch = linkRegex.exec(chunk)) !== null) {
             const before = chunk.slice(linkLastIndex, linkMatch.index);
@@ -84,9 +84,38 @@ function renderInline(parent, text) {
         if (remaining) appendStrongEm(node, remaining);
     };
 
+    const appendEmphasisLinksAndImages = (node, chunk) => {
+        const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+        let imgLastIndex = 0;
+        let imgMatch;
+
+        while ((imgMatch = imageRegex.exec(chunk)) !== null) {
+            const before = chunk.slice(imgLastIndex, imgMatch.index);
+            if (before) appendLinksAndEmphasis(node, before);
+
+            const alt = imgMatch[1] || "image";
+            const src = imgMatch[2];
+            if (isSafeLinkHref(src)) {
+                const img = document.createElement("img");
+                img.className = "md-img";
+                img.alt = alt;
+                img.loading = "lazy";
+                img.src = src;
+                node.appendChild(img);
+            } else {
+                appendLinksAndEmphasis(node, imgMatch[0]);
+            }
+
+            imgLastIndex = imgMatch.index + imgMatch[0].length;
+        }
+
+        const remaining = chunk.slice(imgLastIndex);
+        if (remaining) appendLinksAndEmphasis(node, remaining);
+    };
+
     while ((match = codeRegex.exec(source)) !== null) {
         const before = source.slice(lastIndex, match.index);
-        if (before) appendEmphasisAndLinks(parent, before);
+        if (before) appendEmphasisLinksAndImages(parent, before);
 
         const code = document.createElement("code");
         code.textContent = match[1];
@@ -96,7 +125,7 @@ function renderInline(parent, text) {
     }
 
     const remaining = source.slice(lastIndex);
-    if (remaining) appendEmphasisAndLinks(parent, remaining);
+    if (remaining) appendEmphasisLinksAndImages(parent, remaining);
 }
 
 function renderMarkdownToFragment(markdownText) {
