@@ -64,3 +64,5 @@ def test_stock_query_returns_live_snapshot_when_service_available() -> None:
     assert response.intent == FinancialIntent.STOCK_GUIDANCE
     assert "Latest price for AAPL is 189.42" in response.answer.result
     assert response.metadata["ticker"] == "AAPL"
+    assert response.metadata["chart_url"].startswith("/api/stock/chart?ticker=AAPL")
+    assert "![AAPL price chart](" in response.reply_markdown
