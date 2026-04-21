@@ -158,13 +158,33 @@ def main() -> int:
     if len(set(y)) < 2:
         raise SystemExit("Target column must contain both classes (0 and 1) to train a classifier.")
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=args.test_size,
-        random_state=args.seed,
-        stratify=y,
-    )
+    n = len(y)
+    class0 = sum(1 for v in y if v == 0)
+    class1 = n - class0
+
+    # For tiny datasets, stratified splitting can fail (needs enough rows per class in both splits).
+    use_stratify = min(class0, class1) >= 2 and n >= 10
+
+    # Ensure test split has at least 2 rows when evaluating, otherwise sklearn can error.
+    if args.test_size <= 0:
+        test_size: int | float = 0
+    else:
+        proposed = int(round(n * args.test_size)) if args.test_size < 1 else int(args.test_size)
+        proposed = max(2, proposed)
+        proposed = min(n - 2, proposed) if n > 4 else max(1, n - 1)
+        test_size = proposed
+
+    if test_size == 0:
+        X_train, y_train = X, y
+        X_test, y_test = [], []
+    else:
+        X_train, X_test, y_train, y_test = train_test_split(
+            X,
+            y,
+            test_size=test_size,
+            random_state=args.seed,
+            stratify=y if use_stratify else None,
+        )
 
     pipeline: Pipeline = Pipeline(
         steps=[
@@ -174,19 +194,24 @@ def main() -> int:
     )
     pipeline.fit(X_train, y_train)
 
-    y_pred = pipeline.predict(X_test)
-    y_prob = None
-    try:
-        y_prob = pipeline.predict_proba(X_test)[:, 1]
-    except Exception:
+    acc = None
+    auc = None
+    if X_test:
+        y_pred = pipeline.predict(X_test)
         y_prob = None
+        try:
+            y_prob = pipeline.predict_proba(X_test)[:, 1]
+        except Exception:
+            y_prob = None
 
-    acc = float(accuracy_score(y_test, y_pred))
-    auc = float(roc_auc_score(y_test, y_prob)) if y_prob is not None else None
+        acc = float(accuracy_score(y_test, y_pred))
+        auc = float(roc_auc_score(y_test, y_prob)) if y_prob is not None else None
 
-    print(f"Trained LogisticRegression on {len(X_train)} rows; test_size={args.test_size}.")
-    print(f"Accuracy: {acc:.4f}" + (f"  ROC-AUC: {auc:.4f}" if auc is not None else ""))
-    print(classification_report(y_test, y_pred, digits=4))
+        print(f"Trained LogisticRegression on {len(X_train)} rows; test_rows={len(X_test)} (stratify={use_stratify}).")
+        print(f"Accuracy: {acc:.4f}" + (f"  ROC-AUC: {auc:.4f}" if auc is not None else ""))
+        print(classification_report(y_test, y_pred, digits=4))
+    else:
+        print(f"Trained LogisticRegression on {len(X_train)} rows; no test split (test_size=0).")
 
     bundle = {
         "schema_version": 1,
@@ -206,4 +231,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
