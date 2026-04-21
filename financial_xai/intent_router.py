@@ -19,7 +19,7 @@ KEYWORDS: dict[FinancialIntent, tuple[str, ...]] = {
         "borrow",
     ),
     FinancialIntent.SIMPLE_INTEREST: ("simple interest", "si"),
-    FinancialIntent.COMPOUND_INTEREST: ("compound interest", "ci", "compounding"),
+    FinancialIntent.COMPOUND_INTEREST: ("compound interest", "ci", "compounding", "compund", "compund interest"),
     FinancialIntent.SIP_PROJECTION: ("sip", "systematic investment", "mutual fund", "monthly investment"),
     FinancialIntent.STOCK_GUIDANCE: ("stock", "stocks", "share", "market", "ticker", "quote", "price"),
     FinancialIntent.BANK_PLAN_COMPARISON: (
@@ -76,15 +76,15 @@ def detect_intent(message: str, state: ConversationState | None = None) -> Finan
     # Avoid routing definitional questions like "what is stocks" to the live market path.
     if _find_ticker(message) and any(word in lowered for word in ("price", "quote", "ticker", "chart", "trend")):
         return FinancialIntent.STOCK_GUIDANCE
+    if any(term in lowered for term in ("compound interest", "compounding", "compund", "compound intrest")):
+        return FinancialIntent.COMPOUND_INTEREST
+    if any(term in lowered for term in ("simple interest", "simple intrest")):
+        return FinancialIntent.SIMPLE_INTEREST
     education_markers = KEYWORDS.get(FinancialIntent.FINANCIAL_EDUCATION, ())
     if any(marker in lowered for marker in education_markers):
         looks_like_lookup = any(word in lowered for word in ("price", "quote", "rate", "roi", "yield")) or re.search(r"\d", lowered)
         if not looks_like_lookup:
             return FinancialIntent.FINANCIAL_EDUCATION
-    if "compound" in lowered:
-        return FinancialIntent.COMPOUND_INTEREST
-    if "simple interest" in lowered:
-        return FinancialIntent.SIMPLE_INTEREST
     if best_score > 0:
         return best_intent
     if "interest" in lowered:
