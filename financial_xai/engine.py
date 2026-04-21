@@ -537,7 +537,7 @@ class FinancialAssistantEngine:
             )
             return HandlerResult(answer=answer)
 
-        if "compound interest" in lowered or "compounding" in lowered:
+        if any(w in lowered for w in ("compound interest", "compounding", "compund", "compound intrest")):
             answer = StructuredAnswer(
                 result="Compound interest means you earn returns on both the original principal and the interest already added earlier.",
                 explanation=[
@@ -560,6 +560,16 @@ class FinancialAssistantEngine:
                 ],
                 insight=["SIPs are often preferred for long-term wealth creation because regular contributions combine well with compounding."],
                 suggestion=["Share your monthly amount, duration, and expected return if you want a projection."],
+            )
+            return HandlerResult(answer=answer)
+
+        dynamic_edu = self.ai_provider.get_financial_education(message)
+        if dynamic_edu:
+            answer = StructuredAnswer(
+                result="Here is some insight concerning your query.",
+                explanation=dynamic_edu.explanation,
+                insight=["This information was evaluated dynamically by the robust AI reasoning engine."],
+                suggestion=[dynamic_edu.suggestion],
             )
             return HandlerResult(answer=answer)
 
