@@ -29,6 +29,19 @@ class LoanModelService:
         self._model: Any | None = None
         self._load_attempted = False
 
+    def _unwrap_model(self, loaded: Any) -> tuple[Any, list[str] | None]:
+        """
+        Support both legacy pickles (raw sklearn estimators) and a bundled dict:
+        {"model": estimator, "feature_order": [...]}.
+        """
+        if isinstance(loaded, dict) and "model" in loaded:
+            model = loaded.get("model")
+            feature_order = loaded.get("feature_order")
+            if isinstance(feature_order, list) and all(isinstance(x, str) for x in feature_order):
+                return model, feature_order
+            return model, None
+        return loaded, None
+
     def _load_model(self) -> Any | None:
         if self._load_attempted:
             return self._model
@@ -46,16 +59,19 @@ class LoanModelService:
 
     def predict(self, slots: dict[str, Any]) -> dict[str, Any]:
         explanation = assess_loan_application(slots)
-        model = self._load_model()
+        loaded = self._load_model()
 
-        if model is None:
+        if loaded is None:
             return {
                 **explanation,
                 "prediction_source": "transparent_rule_engine",
                 "model_loaded": False,
             }
 
-        vector = [float(slots.get(feature, 0.0)) for feature in FEATURE_ORDER]
+        model, feature_order = self._unwrap_model(loaded)
+        order = feature_order or FEATURE_ORDER
+
+        vector = [float(slots.get(feature, 0.0)) for feature in order]
         raw_prediction = model.predict([vector])[0]
 
         probability = None
@@ -71,5 +87,5 @@ class LoanModelService:
             "approval_probability": merged_probability,
             "prediction_source": "ml_model",
             "model_loaded": True,
-            "model_features": FEATURE_ORDER,
+            "model_features": order,
         }
