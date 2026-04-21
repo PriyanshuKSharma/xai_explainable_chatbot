@@ -32,14 +32,30 @@ class BaseAIService(ABC):
 class GeminiService(BaseAIService):
     def __init__(self, api_key: str | None = None) -> None:
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
-        self._model = None
-        if self.api_key:
-            import google.generativeai as genai
-            genai.configure(api_key=self.api_key)
-            self._model = genai.GenerativeModel("gemini-1.5-flash")
+        self.model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+        self._client = None
+        self._legacy_model = None
+
+        if not self.api_key:
+            return
+
+        # Prefer the new SDK (`google.genai`). Fall back to the deprecated one if needed.
+        try:
+            from google import genai  # type: ignore
+
+            self._client = genai.Client(api_key=self.api_key)
+        except Exception:
+            try:
+                import google.generativeai as legacy_genai  # type: ignore
+
+                legacy_genai.configure(api_key=self.api_key)
+                self._legacy_model = legacy_genai.GenerativeModel(self.model_name)
+            except Exception:
+                self._client = None
+                self._legacy_model = None
 
     def is_available(self) -> bool:
-        return self._model is not None
+        return self._client is not None or self._legacy_model is not None
 
     def generate_enhanced_content(
         self,
@@ -53,16 +69,29 @@ class GeminiService(BaseAIService):
 
         prompt = self._build_prompt(intent, slots, metadata, base_result)
         try:
-            import google.generativeai as genai
-            response = self._model.generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
-                    response_mime_type="application/json",
-                ),
-            )
-            data = json.loads(response.text)
+            if self._client is not None:
+                from google import genai  # type: ignore
+
+                response = self._client.models.generate_content(
+                    model=self.model_name,
+                    contents=prompt,
+                    config=genai.types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                    ),
+                )
+                data = json.loads(response.text or "{}")
+            else:
+                import google.generativeai as legacy_genai  # type: ignore
+
+                response = self._legacy_model.generate_content(
+                    prompt,
+                    generation_config=legacy_genai.types.GenerationConfig(
+                        response_mime_type="application/json",
+                    ),
+                )
+                data = json.loads(response.text or "{}")
             return AIContent(**data)
-        except Exception as e:
+        except Exception:
             return None
 
     def _build_prompt(self, intent: str, slots: dict[str, Any], metadata: dict[str, Any], base_result: str) -> str:
