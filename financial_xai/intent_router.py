@@ -59,15 +59,22 @@ def _score_intents(message: str) -> dict[FinancialIntent, int]:
 
 def detect_intent(message: str, state: ConversationState | None = None) -> FinancialIntent:
     lowered = message.lower()
+    trimmed = lowered.strip()
     scores = _score_intents(lowered)
     best_intent = max(scores, key=scores.get, default=FinancialIntent.GENERAL_FINANCE)
     best_score = scores.get(best_intent, 0)
+
+    # Single-keyword queries are usually definitional, not live lookups.
+    if trimmed in {"stock", "stocks", "share", "shares", "equity"}:
+        return FinancialIntent.FINANCIAL_EDUCATION
 
     if state and state.active_intent and state.pending_questions:
         if best_score <= 1 or best_intent == state.active_intent:
             return state.active_intent
 
-    if _find_ticker(message) and any(word in lowered for word in ("price", "quote", "stock", "share", "market")):
+    # Only treat as a ticker-based stock lookup when the phrasing indicates a quote/chart request.
+    # Avoid routing definitional questions like "what is stocks" to the live market path.
+    if _find_ticker(message) and any(word in lowered for word in ("price", "quote", "ticker", "chart", "trend")):
         return FinancialIntent.STOCK_GUIDANCE
     education_markers = KEYWORDS.get(FinancialIntent.FINANCIAL_EDUCATION, ())
     if any(marker in lowered for marker in education_markers):
@@ -235,12 +242,14 @@ def _find_ticker(text: str) -> str | None:
         "fd",
         "rd",
         "stock",
+        "stocks",
+        "share",
+        "shares",
         "price",
         "show",
         "what",
         "give",
         "market",
-        "share",
         "a",
         "is",
         "the",
