@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
+from urllib.parse import quote
 
 from financial_xai.calculations import compound_interest, fd_maturity, rd_maturity, simple_interest, sip_future_value
 from financial_xai.formatting import format_currency, format_percent, format_structured_reply
@@ -103,10 +104,18 @@ class FinancialAssistantEngine:
             suggestion=suggestion,
         )
 
+        reply_markdown = format_structured_reply(result.answer)
+        if resp_type == "stock":
+            ticker = str(result.metadata.get("ticker") or merged_slots.get("ticker") or "").strip()
+            if ticker:
+                chart_url = f"/api/stock/chart?ticker={quote(ticker)}&period=1mo"
+                result.metadata.setdefault("chart_url", chart_url)
+                reply_markdown = f"{reply_markdown}\n\nChart:\n![{ticker} price chart]({chart_url})"
+
         return ChatResponse(
             intent=intent,
             answer=result.answer,
-            reply_markdown=format_structured_reply(result.answer),
+            reply_markdown=reply_markdown,
             missing_fields=result.missing_fields,
             follow_up_questions=result.follow_up_questions,
             conversation=conversation,
