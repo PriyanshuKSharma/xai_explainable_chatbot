@@ -7,6 +7,7 @@ from urllib.parse import quote
 from financial_xai.calculations import compound_interest, fd_maturity, rd_maturity, simple_interest, sip_future_value
 from financial_xai.formatting import format_currency, format_percent, format_structured_reply
 from financial_xai.intent_router import detect_intent, extract_slots
+from financial_xai.bank_service import BankProductService
 from financial_xai.modeling import LoanModelService
 from financial_xai.schemas import ChatRequest, ChatResponse, ConversationState, FinancialIntent, StructuredAnswer, NewChatResponse, Visualization
 from financial_xai.stock_service import StockDataError, StockDataService
@@ -26,10 +27,12 @@ class FinancialAssistantEngine:
         self,
         loan_model_service: LoanModelService | None = None,
         stock_data_service: StockDataService | None = None,
+        bank_product_service: BankProductService | None = None,
         ai_provider: AIProvider | None = None,
     ) -> None:
         self.loan_model_service = loan_model_service or LoanModelService()
         self.stock_data_service = stock_data_service or StockDataService()
+        self.bank_product_service = bank_product_service or BankProductService()
         self.ai_provider = ai_provider or AIProvider()
 
     def respond(self, request: ChatRequest) -> ChatResponse:
@@ -368,9 +371,57 @@ class FinancialAssistantEngine:
         )
         return HandlerResult(answer=answer, metadata=snapshot)
 
-    def _handle_bank_plan_comparison(self, _: str, slots: dict[str, Any]) -> HandlerResult:
-        risk_appetite = slots.get("risk_appetite", "medium")
+    def _handle_bank_plan_comparison(self, message: str, slots: dict[str, Any]) -> HandlerResult:
+        product_type = slots.get("product_type")
+        bank = slots.get("bank")
         years = float(slots.get("years", 3))
+
+        wants_rate = any(k in message.lower() for k in ("rate", "interest", "roi", "yield"))
+        if (wants_rate or bank) and (product_type in {"FD", "RD", "SAVINGS"} or product_type is None):
+            matches = self.bank_product_service.find_rates(
+                product=str(product_type) if product_type else None,
+                bank=str(bank) if bank else None,
+                tenure_years=years if years else None,
+            )
+            if bank and product_type and matches:
+                top = matches[0]
+                answer = StructuredAnswer(
+                    result=f"{top.bank} {top.product} rate (dataset): {top.rate_annual_pct:.2f}% p.a. for {years:g} years.",
+                    explanation=[
+                        "This is read from the local bank dataset bundled with the project (not a live feed).",
+                        f"Matched rule: bank={top.bank}, product={top.product}, tenure {top.tenure_years_min:g}–{top.tenure_years_max:g} years.",
+                        f"Compounding: {top.compounding or 'not specified'}.",
+                    ],
+                    insight=[
+                        "FD/RD rates can vary by tenure bucket and customer category (senior citizen, etc.).",
+                        "For explainability, using a local dataset makes the response reproducible and auditable.",
+                    ],
+                    suggestion=[
+                        "If you want, tell me if you are a senior citizen and the exact tenure in months for a closer match.",
+                        "You can update the dataset at data/banks/bank_products.json to reflect your bank’s official table.",
+                    ],
+                )
+                return HandlerResult(answer=answer, metadata={"bank_rates": [top.__dict__]})
+
+            if product_type and not bank:
+                best = self.bank_product_service.best_rate(product=str(product_type), tenure_years=years)
+                if best:
+                    answer = StructuredAnswer(
+                        result=f"Best {best.product} rate in the local dataset: {best.rate_annual_pct:.2f}% p.a. ({best.bank}) for {years:g} years.",
+                        explanation=[
+                            "This is from the local dataset bundled with the project (not live rates).",
+                            f"Tenure match: {best.tenure_years_min:g}–{best.tenure_years_max:g} years.",
+                            f"Compounding: {best.compounding or 'not specified'}.",
+                        ],
+                        insight=["Dataset-driven answers are stable and explainable, but you must keep the file updated."],
+                        suggestion=[
+                            "Tell me the bank name if you want a bank-specific rate lookup.",
+                            "If you share your lump sum or monthly amount, I can also compute maturity value.",
+                        ],
+                    )
+                    return HandlerResult(answer=answer, metadata={"bank_rates": [best.__dict__]})
+
+        risk_appetite = slots.get("risk_appetite", "medium")
         monthly_amount = slots.get("monthly_amount")
         lump_sum = slots.get("lump_sum")
 
@@ -431,6 +482,61 @@ class FinancialAssistantEngine:
 
     def _handle_education(self, message: str, _: dict[str, Any]) -> HandlerResult:
         lowered = message.lower()
+        if any(term in lowered for term in ("stock", "stocks", "share", "shares", "equity")):
+            answer = StructuredAnswer(
+                result="A stock (share/equity) is a unit of ownership in a company.",
+                explanation=[
+                    "When you buy a stock, you become a shareholder and participate in the company’s upside and downside.",
+                    "Returns can come from price appreciation and, sometimes, dividends.",
+                    "Key risks include business performance risk and market volatility (prices can move quickly).",
+                ],
+                insight=["A stock price is not the same thing as a company’s value; valuation depends on profits, growth, and expectations."],
+                suggestion=[
+                    "If you name a ticker (e.g., AAPL), I can fetch a live snapshot and show a price chart.",
+                    "If you tell me your time horizon and risk appetite, I can explain whether stocks fit your profile.",
+                ],
+            )
+            return HandlerResult(answer=answer)
+
+        if "bond" in lowered or "debenture" in lowered:
+            answer = StructuredAnswer(
+                result="A bond is a loan you give to an issuer (company or government) in exchange for interest payments and principal repayment.",
+                explanation=[
+                    "Bonds typically have a fixed maturity date and an interest rate (coupon).",
+                    "Prices can still move because interest rates and credit risk change over time.",
+                    "Safer issuers usually pay lower yields; riskier issuers pay higher yields.",
+                ],
+                insight=["Bond returns are sensitive to interest-rate changes: when rates rise, existing bond prices often fall (and vice versa)."],
+                suggestion=["If you share your time horizon and risk tolerance, I can compare bonds vs FD/RD/SIP in plain terms."],
+            )
+            return HandlerResult(answer=answer)
+
+        if "mutual fund" in lowered or "etf" in lowered:
+            answer = StructuredAnswer(
+                result="A mutual fund/ETF pools money from many investors to buy a basket of assets (stocks/bonds/etc.).",
+                explanation=[
+                    "A mutual fund is usually bought/sold at end-of-day NAV; an ETF trades on an exchange like a stock.",
+                    "They can provide diversification by holding many instruments at once.",
+                    "Returns are market-linked, so they are not guaranteed.",
+                ],
+                insight=["Diversification reduces single-company risk, but it cannot remove overall market risk."],
+                suggestion=["Tell me your monthly amount and years, and I can project a SIP-style scenario (with transparent assumptions)."],
+            )
+            return HandlerResult(answer=answer)
+
+        if "inflation" in lowered:
+            answer = StructuredAnswer(
+                result="Inflation is the general rise in prices over time, which reduces the purchasing power of money.",
+                explanation=[
+                    "If inflation is 6% and your savings earn 5%, your real (inflation-adjusted) return is roughly negative.",
+                    "That is why long-term goals often need growth assets (with higher volatility) to beat inflation.",
+                    "Safe instruments help protect capital, but may not always beat inflation.",
+                ],
+                insight=["Always compare returns against inflation to understand your real wealth change."],
+                suggestion=["If you share your goal amount and timeline, I can suggest a mix of FD/RD/SIP scenarios with assumptions."],
+            )
+            return HandlerResult(answer=answer)
+
         if "compound interest" in lowered or "compounding" in lowered:
             answer = StructuredAnswer(
                 result="Compound interest means you earn returns on both the original principal and the interest already added earlier.",
