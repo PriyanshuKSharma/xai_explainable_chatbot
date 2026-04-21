@@ -28,6 +28,10 @@ class BaseAIService(ABC):
     ) -> AIContent | None:
         pass
 
+    @abstractmethod
+    def generate_financial_education(self, topic: str) -> AIContent | None:
+        pass
+
 
 class GeminiService(BaseAIService):
     def __init__(self, api_key: str | None = None) -> None:
@@ -113,6 +117,50 @@ class GeminiService(BaseAIService):
         }}
         """
 
+    def generate_financial_education(self, topic: str) -> AIContent | None:
+        if not self.is_available():
+            return None
+
+        prompt = f"""
+        You are a Financial Educator. Explain the following finance topic or query clearly:
+        Topic: {topic}
+
+        Based on this, provide:
+        1. 2-3 distinct, short explanatory points defining it or addressing the query.
+        2. A practical financial insight/suggestion related to this topic.
+
+        Output JSON:
+        {{
+          "explanation": ["point 1", "point 2"],
+          "suggestion": "string"
+        }}
+        """
+        try:
+            if self._client is not None:
+                from google import genai  # type: ignore
+
+                response = self._client.models.generate_content(
+                    model=self.model_name,
+                    contents=prompt,
+                    config=genai.types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                    ),
+                )
+                data = json.loads(response.text or "{}")
+            else:
+                import google.generativeai as legacy_genai  # type: ignore
+
+                response = self._legacy_model.generate_content(
+                    prompt,
+                    generation_config=legacy_genai.types.GenerationConfig(
+                        response_mime_type="application/json",
+                    ),
+                )
+                data = json.loads(response.text or "{}")
+            return AIContent(**data)
+        except Exception:
+            return None
+
 
 class GroqService(BaseAIService):
     def __init__(self, api_key: str | None = None) -> None:
@@ -169,6 +217,38 @@ class GroqService(BaseAIService):
         Format: {{"explanation": ["...", "..."], "suggestion": "..."}}
         """
 
+    def generate_financial_education(self, topic: str) -> AIContent | None:
+        if not self.is_available():
+            return None
+
+        prompt = f"""
+        You are a Financial Educator. Explain the following finance topic or query clearly:
+        Topic: {topic}
+
+        Based on this, provide:
+        1. 2-3 distinct, short explanatory points defining it or addressing the query.
+        2. A practical financial insight/suggestion related to this topic.
+
+        Output JSON:
+        {{
+          "explanation": ["point 1", "point 2"],
+          "suggestion": "string"
+        }}
+        """
+        try:
+            response = self._client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": "You are a specialized financial AI. Always output valid JSON."},
+                    {"role": "user", "content": prompt},
+                ],
+                model="llama-3.3-70b-versatile",
+                response_format={"type": "json_object"},
+            )
+            data = json.loads(response.choices[0].message.content)
+            return AIContent(**data)
+        except Exception:
+            return None
+
 
 class AIProvider:
     def __init__(self) -> None:
@@ -187,6 +267,14 @@ class AIProvider:
         for service in self.services:
             if service.is_available():
                 content = service.generate_enhanced_content(intent, slots, metadata, base_result)
+                if content:
+                    return content
+        return None
+
+    def get_financial_education(self, topic: str) -> AIContent | None:
+        for service in self.services:
+            if service.is_available():
+                content = service.generate_financial_education(topic)
                 if content:
                     return content
         return None
