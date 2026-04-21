@@ -1,0 +1,56 @@
+[
+  {
+    "bank": "SBI",
+    "product": "FD",
+    "tenure_years_min": 1,
+    "tenure_years_max": 3,
+    "rate_annual_pct": 6.75,
+    "compounding": "quarterly",
+    "notes": "Sample dataset (not live rates). Replace with your bank's official rates."
+  },
+  {
+    "bank": "SBI",
+    "product": "RD",
+    "tenure_years_min": 1,
+    "tenure_years_max": 5,
+    "rate_annual_pct": 6.5,
+    "compounding": "quarterly",
+    "notes": "Sample dataset (not live rates). Replace with your bank's official rates."
+  },
+  {
+    "bank": "HDFC",
+    "product": "FD",
+    "tenure_years_min": 1,
+    "tenure_years_max": 3,
+    "rate_annual_pct": 7.1,
+    "compounding": "quarterly",
+    "notes": "Sample dataset (not live rates). Replace with your bank's official rates."
+  },
+  {
+    "bank": "HDFC",
+    "product": "RD",
+    "tenure_years_min": 1,
+    "tenure_years_max": 5,
+    "rate_annual_pct": 6.8,
+    "compounding": "quarterly",
+    "notes": "Sample dataset (not live rates). Replace with your bank's official rates."
+  },
+  {
+    "bank": "ICICI",
+    "product": "FD",
+    "tenure_years_min": 1,
+    "tenure_years_max": 3,
+    "rate_annual_pct": 7.0,
+    "compounding": "quarterly",
+    "notes": "Sample dataset (not live rates). Replace with your bank's official rates."
+  },
+  {
+    "bank": "AXIS",
+    "product": "FD",
+    "tenure_years_min": 1,
+    "tenure_years_max": 3,
+    "rate_annual_pct": 6.9,
+    "compounding": "quarterly",
+    "notes": "Sample dataset (not live rates). Replace with your bank's official rates."
+  }
+]
