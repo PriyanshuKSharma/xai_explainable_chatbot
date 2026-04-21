@@ -108,7 +108,7 @@ class FinancialAssistantEngine:
         )
 
         reply_markdown = format_structured_reply(result.answer)
-        if resp_type == "stock":
+        if resp_type == "stock" and "error" not in (result.metadata or {}) and "price" in (result.metadata or {}):
             ticker = str(result.metadata.get("ticker") or merged_slots.get("ticker") or "").strip()
             if ticker:
                 chart_url = f"/api/stock/chart?ticker={quote(ticker)}&period=1mo"
