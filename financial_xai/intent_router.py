@@ -99,8 +99,11 @@ def detect_intent(message: str, state: ConversationState | None = None) -> Finan
         # Check if the original message contains the ticker in all caps
         # Replace common punctuation that might be attached to it
         clean_msg = message.replace("?", "").replace(",", "").replace(".", " ")
-        is_upper = any(t == ticker for t in clean_msg.split())
-        if has_stock_word or is_upper:
+        words = clean_msg.split()
+        is_upper = any(t == ticker for t in words)
+        is_exact = len(words) == 1 and words[0].lower() == ticker.lower()
+        is_what_is = len(words) <= 3 and "what is" in lowered and any(t.lower() == ticker.lower() for t in words)
+        if has_stock_word or is_upper or is_exact or is_what_is:
             return FinancialIntent.STOCK_GUIDANCE
 
     if any(term in lowered for term in ("compound interest", "compounding", "compund", "compound intrest")):
