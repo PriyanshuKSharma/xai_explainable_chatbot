@@ -6,10 +6,9 @@ import {
 import { 
   LayoutDashboard, Server, ShieldCheck, Activity, Terminal, PlayCircle, Zap, FileText, Download
 } from 'lucide-react';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Document, Packer, Paragraph, ImageRun } from 'docx';
-import { saveAs } from 'file-saver';
 
 const mockMetrics = [
   { name: 'Jan', requests: 4000, accuracy: 84 },
@@ -45,7 +44,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('overview');
   const [chartType, setChartType] = useState('Area');
   
-  // Real-time ticking state for the Stock Endpoint
   const [liveStock, setLiveStock] = useState([
     { time: '14:25', price: 156.40 },
     { time: '14:26', price: 156.55 },
@@ -55,7 +53,6 @@ export default function App() {
   ]);
 
   useEffect(() => {
-    // Simulating live ticking market feed for the frontend
     const interval = setInterval(() => {
       setLiveStock(current => {
         const last = current[current.length - 1];
@@ -64,58 +61,76 @@ export default function App() {
         let h = parseInt(rawTime[0]);
         if (m >= 60) { m = 0; h += 1; }
         const nextTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-        // Random price fluctuation between -0.50 and +0.60
         const change = (Math.random() * 1.1) - 0.5;
         const nextPrice = parseFloat((last.price + change).toFixed(2));
         
         const nextState = [...current, { time: nextTime, price: nextPrice }];
-        // Keep only the last 15 ticks for cleanliness
         if (nextState.length > 15) nextState.shift();
         return nextState;
       });
-    }, 3000); // Ticks every 3 seconds
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
   const handleExportPDF = async () => {
-    const element = document.getElementById('dashboard-canvas');
-    if (!element) return;
-    const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#0a0a0f' });
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('l', 'pt', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save('XAI_Analytics_Report.pdf');
+    try {
+      console.log('Generating PDF...');
+      const element = document.getElementById('dashboard-canvas');
+      if (!element) return;
+      const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#0a0a0f' });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('l', 'pt', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save('XAI_Analytics_Report.pdf');
+    } catch (error) {
+      console.error('PDF Generation Error:', error);
+      alert('Failed to generate PDF. Check console.');
+    }
   };
 
   const handleExportDOCX = async () => {
-    const element = document.getElementById('dashboard-canvas');
-    if (!element) return;
-    const canvas = await html2canvas(element, { scale: 1, backgroundColor: '#0a0a0f' });
-    const imgData = canvas.toDataURL('image/png');
-    const res = await fetch(imgData);
-    const blob = await res.blob();
-    const arrayBuffer = await blob.arrayBuffer();
+    try {
+      console.log('Generating DOCX...');
+      const element = document.getElementById('dashboard-canvas');
+      if (!element) return;
+      const canvas = await html2canvas(element, { scale: 1, backgroundColor: '#0a0a0f' });
+      const imgData = canvas.toDataURL('image/png');
+      const res = await fetch(imgData);
+      const blob = await res.blob();
+      const arrayBuffer = await blob.arrayBuffer();
 
-    const doc = new Document({
-      sections: [{
-        properties: {},
-        children: [
-          new Paragraph({
-            children: [
-              new ImageRun({
-                data: arrayBuffer,
-                transformation: { width: 600, height: (canvas.height * 600) / canvas.width },
-                type: 'png'
-              } as any)
-            ]
-          })
-        ]
-      }]
-    });
-    const docBlob = await Packer.toBlob(doc);
-    saveAs(docBlob, 'XAI_Analytics_Report.docx');
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data: arrayBuffer,
+                  transformation: { width: 600, height: (canvas.height * 600) / canvas.width },
+                  type: 'png'
+                } as any)
+              ]
+            })
+          ]
+        }]
+      });
+      
+      const docBlob = await Packer.toBlob(doc);
+      const url = window.URL.createObjectURL(docBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'XAI_Analytics_Report.docx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('DOCX Generation Error:', error);
+      alert('Failed to generate DOCX. Check console.');
+    }
   };
 
   const renderSelectedChart = (data: any, dataKey: string, strokeColor: string, isGradient: boolean) => {
@@ -222,7 +237,7 @@ export default function App() {
             <div className="flex items-center gap-2 ml-4">
                <span className="text-xs font-medium text-slate-500">Chart Type:</span>
                <select 
-                 className="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 outline-none focus:border-cyan-500 text-slate-300"
+                 className="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 outline-none focus:border-cyan-500 text-slate-300 cursor-pointer"
                  value={chartType}
                  onChange={(e) => setChartType(e.target.value)}
                >
@@ -233,11 +248,11 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={handleExportDOCX} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg text-sm font-medium transition-colors border border-blue-500/20">
+            <button onClick={handleExportDOCX} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg text-sm font-medium transition-colors border border-blue-500/20 cursor-pointer">
               <FileText className="w-4 h-4" />
               DOCX
             </button>
-            <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-red-400 rounded-lg text-sm font-medium transition-colors border border-red-500/20">
+            <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-red-400 rounded-lg text-sm font-medium transition-colors border border-red-500/20 cursor-pointer">
               <Download className="w-4 h-4" />
               PDF
             </button>
