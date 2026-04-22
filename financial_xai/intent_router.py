@@ -267,26 +267,16 @@ def _find_bank(text: str) -> str | None:
 
 def _find_ticker(text: str) -> str | None:
     protected_words = {
-        "loan",
-        "sip",
-        "fd",
-        "rd",
-        "stock",
-        "stocks",
-        "share",
-        "shares",
-        "price",
-        "show",
-        "what",
-        "give",
-        "market",
-        "a",
-        "is",
-        "the",
-        "of",
-        "for",
-        "me",
+        "loan", "sip", "fd", "rd", "stock", "stocks", "share", "shares",
+        "price", "show", "what", "give", "market", "a", "is", "the", "of", "for", "me",
+        "bond", "bonds", "debenture", "mutual", "fund", "etf", "inflation", "interest",
+        "rate", "return", "returns", "can", "you", "please", "fetch", "check", "about", 
+        "company", "prize", "get", "value", "find", "how", "much", "does", "cost", 
+        "today", "now", "yesterday", "tomorrow", "will", "it", "go", "up", "down", 
+        "buy", "sell", "hold", "should", "i", "we", "they", "he", "she"
     }
+    
+    candidates = []
     for token in TICKER_PATTERN.findall(text):
         normalized = token.upper()
         if normalized.lower() in protected_words:
@@ -295,8 +285,24 @@ def _find_ticker(text: str) -> str | None:
             continue
         if len(normalized) == 1:
             continue
-        return normalized
-    return None
+        candidates.append((token, normalized))
+        
+    if not candidates:
+        return None
+        
+    # Priority 1: Tokens with a dot (e.g., RELIANCE.NS, TSLA.MI) represent exact tickers
+    for original, normalized in candidates:
+        if "." in normalized:
+            return normalized
+
+    # Priority 2: Tokens explicitly typed in all uppercase by the user (e.g., AAPL)
+    for original, normalized in candidates:
+        if original.isupper():
+            return normalized
+            
+    # Priority 3: The last viable candidate in the sentence (most natural language places the subject at the end)
+    # e.g., "please get the stock price of reliance" -> reliance
+    return candidates[-1][1]
 
 
 def extract_slots(message: str, intent: FinancialIntent) -> dict[str, Any]:
