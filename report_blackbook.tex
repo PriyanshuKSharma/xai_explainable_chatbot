@@ -14,6 +14,30 @@
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric, arrows, positioning}
 \usepackage{amsmath}
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{caption}
+\usepackage{tcolorbox}
+\usepackage{tabularx}
+\usepackage{setspace}
+\usepackage{fontenc}
+\usepackage{inputenc}
+\usepackage{microtype}
+\usepackage{multicol}
+\usepackage{tikz}
+
 
 \geometry{
     a4paper,
@@ -59,74 +83,149 @@
 
 \begin{document}
 
-\begin{titlepage}
-    \begin{center}
-        \vspace*{1cm}
+% \begin{titlepage}
+%     \begin{center}
+%         \vspace*{1cm}
         
-        \Huge
-        \textbf{Financial Explainable AI Chatbot}
+%         \Huge
+%         \textbf{Financial Explainable AI Chatbot}
         
-        \vspace{0.5cm}
-        \LARGE
-        Project Blackbook / Thesis Report
+%         \vspace{0.5cm}
+%         \LARGE
+%         Project Report
         
-        \vspace{1.5cm}
+%         \vspace{1.5cm}
         
-        \textbf{Submitted by} \\
-        \vspace{0.5cm}
-        Priyanshu K Sharma \hspace{0.5cm} \textit{(Or relevant student name)}\\
-        University/College Name
+%         \textbf{Submitted by} \\
+%         \vspace{0.5cm}
+%         Priyanshu Kumar Sharma \hspace{0.5cm}}\\
+%         Ajeenkya D Y Patil University
         
-        \vfill
+%         \vfill
         
-        \Large
-        A project presented for the degree of\\
-        Bachelor of Technology
+%         \Large
+%         A project presented for the degree of\\
+%         Bachelor of Technology
         
-        \vspace{0.8cm}
+%         \vspace{0.8cm}
         
-        \includegraphics[width=0.4\textwidth]{placeholder_logo.png} 
+%         \includegraphics[width=0.4\textwidth]{placeholder_logo.png} 
         
-        \vspace{0.5cm}
+%         \vspace{0.5cm}
         
-        \Large
-        Department of Computer Science and Engineering\\
-        University/College Name\\
-        \today
+%         \Large
+%         School of Engineering\\
+%         Ajeenkya D Y Patil University\\
+%         \today
         
-    \end{center}
-\end{titlepage}
+%     \end{center}
+% \end{titlepage}
 
+% ── Title Page ────────────────────────────────────────────────────────────────
+\begin{titlepage}
+\thispagestyle{empty}
+\centering
+
+\vspace*{0.2cm}
+
+% ── College Logo ──────────────────────────────────────────────────────────────
+\includegraphics[width=7.8cm]{adypu_logo.png}
+
+\vspace{0.2cm}
+
+{\Large\bfseries\color{primaryblue} Ajeenkya DY Patil University}\\[0.15cm]
+{\normalsize Department of Information Technology}\\[0.1cm]
+{\normalsize B.Tech IT (Cloud Technology \& Information Security)}\\[0.1cm]
+{\normalsize Semester VIII}
+
+\vspace{0.25cm}
+\color{accentblue}\hrule height 1.5pt
+\vspace{0.15cm}
+\color{black}
+
+{\small Subject: Data Driven Problem Solving \hspace{1cm} Subject Code: CI315E}
+
+\vspace{0.15cm}
+\color{accentblue}\hrule height 0.5pt
+\color{black}
+\vspace{0.5cm}
+
+{\Huge\bfseries\color{primaryblue} Financial Explainable \\[0.1cm] AI Chat-bot}
+
+\vspace{0.2cm}
+% {\large\itshape A Complete End-to-End NLP Pipeline}
+
+\vspace{0.3cm}
+
+\begin{tcolorbox}[colback=lightgray,colframe=accentblue,width=0.85\textwidth,arc=4pt]
+\centering
+\begin{tabular}{ll}
+\textbf{Project Type}  & Explainable AI (XAI) \& Financial Technology \\
+\textbf{Data Sources}  & Custom Loan Data \& Live Market Data (yfinance) \\
+\textbf{Core Features} & Loan Eligibility XAI, SIP/FD/RD Calculators, Live Stocks \\
+\textbf{Algorithm}     & Random Forest, Logistic Regression \& Rule-based XAI \\
+\textbf{Interface}     & Streamlit Web Subsystem \& Flask API Backend \\
+\textbf{Tools}         & Python, Streamlit, Flask, scikit-learn, yfinance, LLM APIs \\
+\end{tabular}
+\end{tcolorbox}
+
+\vspace{0.4cm}
+
+{\large\bfseries Submitted By}\\[0.3cm]
+
+\begin{tabular}{cc}
+\hline
+\rule{0pt}{12pt}\textbf{Name} & \textbf{URN} \\
+\hline
+\rule{0pt}{12pt}Priyanshu Kumar Sharma & 2022-B-17102004A \\
+Vaishnavi Jadhav & 2022-B-10052005E \\
+Vaibhav Gulge & 2022-B-08062040A\\
+\hline
+\end{tabular}
+
+\vspace{0.4cm}
+
+{\large\bfseries Guide}\\[0.15cm]
+{\large Prof. Amit Nichat}
+
+\vspace{0.4cm}
+\color{accentblue}\hrule height 0.5pt
+\color{black}
+\vspace{0.2cm}
+{\small Academic Year 2025--26}
+
+\end{titlepage}
+\thispagestyle{empty}
 \pagenumbering{roman}
 
 \chapter*{Certificate}
 \addcontentsline{toc}{chapter}{Certificate}
-This is to certify that the project entitled \textbf{"Financial Explainable AI Chatbot"} is a bonafide work carried out by the student in partial fulfillment for the award of the degree of Bachelor of Technology in Computer Science and Engineering during the academic year 2025-2026. The project was completed under our guidance and supervision.
+This is to certify that the project entitled \textbf{"Financial Explainable AI Chatbot"} is a bonafide work carried out by the student in partial fulfillment for the award of the degree of \textbf{Bachelor of Technology in Information Technology (Cloud Technology and Information Security)} during the academic year 2025-2026. The project was completed under our guidance and supervision.
 
 \vspace{3cm}
 
 \begin{flushleft}
-    \textbf{Project Guide} \hfill \textbf{Head of Department} \\
-    Name of Guide \hfill Name of HOD \\
-    Designation \hfill Designation
+    \textbf{Project Guide} \hfill  \\
+    Amit Nichat \hfill  \\
+    Assistant Professor \hfill 
 \end{flushleft}
 
 \vspace{2cm}
 \begin{center}
-    \textbf{External Examiner} \\
+    \textbf{Sign of Examiner} \\
     ....................................
 \end{center}
 \pagebreak
 
 \chapter*{Declaration}
 \addcontentsline{toc}{chapter}{Declaration}
-I hereby declare that the project report entitled \textbf{"Financial Explainable AI Chatbot"} submitted is a record of an original work done by me under the guidance of the Project Guide. This project work is submitted in the partial fulfillment of the requirements for the award of the degree of Bachelor of Technology in Computer Science and Engineering. The results embodied in this thesis have not been submitted to any other University or Institute for the award of any degree or diploma.
+I hereby declare that the project report entitled \textbf{"Financial Explainable AI Chatbot"} submitted is a record of an original work done by me under the guidance of the Project Guide. This project work is submitted in the partial fulfillment of the requirements for the award of the degree of \textbf{Bachelor of Technology in Information Technology (Cloud Technology and Information Security)}. The results embodied in this thesis have not been submitted to any other University or Institute for the award of any degree or diploma.
 
 \vspace{3cm}
 
 \begin{flushright}
-    \textbf{Student Signature} \\
-    Roll Number \\
+    \textbf{Priyanshu Kumar Sharma} \\
+    2022-B-17102004A \\
     Date: \today
 \end{flushright}
 \pagebreak
@@ -135,26 +234,20 @@ I hereby declare that the project report entitled \textbf{"Financial Explainable
 \addcontentsline{toc}{chapter}{Acknowledgement}
 I would like to express my profound gratitude and deep regards to my project guide for their exemplary guidance, monitoring, and constant encouragement throughout the course of this thesis. The blessing, help, and guidance given by them time to time shall carry me a long way in the journey of life on which I am about to embark.
 
-I also take this opportunity to express a deep sense of gratitude to the Head of the Department of Computer Science and Engineering, for their cordial support, valuable information, and guidance, which helped me in completing this task through various stages.
+I also take this opportunity to express a deep sense of gratitude to Assisstant Professor Amit Nichat, for his   cordial support, valuable information, and guidance, which helped me in completing this task through various stages.
 
 Lastly, I thank almighty, my parents, and friends for their constant encouragement without which this assignment would not be possible.
 
 \vspace{2cm}
 
 \begin{flushright}
-    \textbf{Student Name}
+    \textbf{Priyanshu Kumar Sharma}
 \end{flushright}
 \pagebreak
 
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-Artificial Intelligence has penetrated numerous sectors, fundamentally altering how operations are executed. However, in sensitive domains like finance, the "black box" nature of complex AI models creates a barrier to trust and regulatory compliance. Explainable AI (XAI) addresses this by providing human-understandable justifications for AI decisions. 
-
-This project, titled "Financial Explainable AI Chatbot," proposes and develops an interactive system that leverages machine learning to yield financial insights while prioritizing transparency. The chatbot integrates real-time information retrieval methods, custom financial calculation tools (Simple Interest, Compound Interest, SIP, and FD computations), and an Explainable AI engine specifically dedicated to loan eligibility scoring. 
-
-Powered by a decoupled architecture comprising a Flask backend and a Streamlit frontend, the system orchestrates user queries using intent routing and returns both computed answers and the logic behind them. Our loan engine features dual-mode functionality: predictive capability via a pre-trained machine learning model and a robust fallback mechanism utilizing a transparent, rule-based approach when models are unavailable. The user interacts through a modern natural language AI chat interface, breaking the barrier of traditional, clunky forms and rigid web portals.
-
-This thesis details the architectural design, algorithmic implementation, mathematical formulations, workflow architectures, and evaluation of the system. The provided system diagrams showcase the event loop driven UI orchestrating calls to a centralized routing engine. Overall, the system acts as a comprehensive demonstration of fostering user trust in financial technologies through interactive XAI interfaces.
+Artificial Intelligence has penetrated numerous sectors, fundamentally altering how operations are executed. However, in sensitive domains like finance, the "black box" nature of complex AI models creates a barrier to trust and regulatory compliance. Explainable AI (XAI) addresses this by providing human-understandable justifications for AI decisions. This project, titled "Financial Explainable AI Chatbot," proposes and develops an interactive system that leverages machine learning to yield financial insights while prioritizing transparency. The chatbot integrates real-time information retrieval methods, custom financial calculation tools (Simple Interest, Compound Interest, SIP, and FD computations), and an Explainable AI engine specifically dedicated to loan eligibility scoring. Powered by a decoupled architecture comprising a Flask backend and a Streamlit frontend, the system orchestrates user queries using intent routing and returns both computed answers and the logic behind them. Our loan engine features dual-mode functionality: predictive capability via a pre-trained machine learning model and a robust fallback mechanism utilizing a transparent, rule-based approach when models are unavailable. The user interacts through a modern natural language AI chat interface, breaking the barrier of traditional, clunky forms and rigid web portals. This thesis details the architectural design, algorithmic implementation, mathematical formulations, workflow architectures, and evaluation of the system. The provided system diagrams showcase the event loop driven UI orchestrating calls to a centralized routing engine. Overall, the system acts as a comprehensive demonstration of fostering user trust in financial technologies through interactive XAI interfaces.
 
 \pagebreak
 
@@ -243,15 +336,15 @@ This section visually details the architectural pipeline executing a user reques
 
 \begin{figure}[h]
 \centering
-\begin{tikzpicture}[node distance=2cm]
+\begin{tikzpicture}[node distance=2.5cm]
 
 % Nodes
 \node (ui) [process] {Streamlit User Interface (ui.py)};
 \node (flask) [process, below of=ui, yshift=-1cm] {Flask API Endpoint (app.py)};
 \node (router) [decision, below of=flask, yshift=-1.5cm] {Intent Router (engine.py)};
-\node (ml) [process, below left of=router, xshift=-2.5cm, yshift=-2.5cm] {ML / Fallback Loan Predictor};
-\node (fin) [process, below of=router, yshift=-3cm] {Financial Calculations};
-\node (stock) [process, below right of=router, xshift=2.5cm, yshift=-2.5cm] {Yahoo Finance Stock Service};
+\node (ml) [process, below left of=router, xshift=-3.8cm, yshift=-3.8cm] {ML / Fallback Loan Predictor};
+\node (fin) [process, below of=router, yshift=-5cm] {Financial Calculations};
+\node (stock) [process, below right of=router, xshift=3.8cm, yshift=-3.8cm] {Yahoo Finance Stock Service};
 
 % Arrows
 \draw [arrow] (ui) -- node[anchor=west] {HTTP POST /chat} (flask);
@@ -275,7 +368,7 @@ This section visually details the architectural pipeline executing a user reques
 
 \begin{figure}[h]
 \centering
-\begin{tikzpicture}[node distance=2cm]
+\begin{tikzpicture}[node distance=2.5cm]
 \node (start) [cloud] {Incoming Request};
 \node (modelcheck) [decision, below of=start, yshift=-1cm] {Does model.pkl exist?};
 \node (scikitlearn) [process, right of=modelcheck, xshift=4cm] {Load Random Forest Model};
@@ -461,7 +554,7 @@ if "messages" not in st.session_state:
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
-st.set_page_config(page_title="Financial XAI Chatbot", layout="centered", page_icon="🏦")
+st.set_page_config(page_title="Financial XAI Chatbot", layout="centered", page_icon="��")
 st.title("Explainable AI Chatbot")
 st.markdown("I can run loan predictions, calculate SIPs, or check current stock prices.")
 
@@ -496,6 +589,8 @@ if prompt := st.chat_input("Ask about loan eligibility, try SIP calculation, or 
         except Exception as e:
             st.error(f"Critical fault: {str(e)}. Validate Flask Server API deployed.")
 \end{lstlisting}
+
+\newpage
 
 \section{API Entry Point Configuration (app.py)}
 \begin{lstlisting}[language=Python]
@@ -563,7 +658,7 @@ def calculate_sip(monthly_investment: float, annual_rate: float, time_years: flo
 
 \end{lstlisting}
 
-\section{Real-time Equity Analysis Service (stock\_service.py)}
+\section{Real-time Equity Analysis Service \\ (stock\_service.py)}
 \begin{lstlisting}[language=Python]
 import yfinance as yf
 
