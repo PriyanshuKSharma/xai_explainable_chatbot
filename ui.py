@@ -173,24 +173,30 @@ def render_bot_payload(payload: dict[str, Any]) -> None:
                     st.line_chart(df.set_index("year"))
             elif viz["type"] == "stock":
                 data = viz.get("data") or {}
-                if isinstance(data, dict) and data.get("chart_url"):
-                    chart_url = urljoin(backend_base, str(data["chart_url"]))
-                    try:
-                        svg_resp = requests.get(chart_url, timeout=10)
-                        svg_resp.raise_for_status()
-                        components.html(svg_resp.text, height=300, scrolling=False)
-                    except requests.RequestException as exc:
-                        st.warning(f"Failed to load stock chart: {exc}")
+                if isinstance(data, dict):
+                    chart_url = data.get("chart_url")
+                    ticker = data.get("ticker")
+                    rendered = False
+
+                    if chart_url and BACKEND_MODE != "local":
+                        full_url = urljoin(backend_base, str(chart_url))
+                        try:
+                            svg_resp = requests.get(full_url, timeout=10)
+                            svg_resp.raise_for_status()
+                            components.html(svg_resp.text, height=300, scrolling=False)
+                            rendered = True
+                        except requests.RequestException:
+                            pass  # gracefully fall back to local SVG building
+
+                    if not rendered and ticker:
+                        # Local-mode fallback: render chart directly without relying on Flask endpoints.
+                        try:
+                            svg = STOCKS.build_price_chart_svg(str(ticker), period="1mo", interval="1d")
+                            components.html(svg, height=300, scrolling=False)
+                        except (StockDataError, Exception):
+                            st.json(data)
+                    elif not rendered:
                         st.json(data)
-                elif isinstance(data, dict) and data.get("ticker"):
-                    # Local-mode fallback: render chart directly without relying on Flask endpoints.
-                    try:
-                        svg = STOCKS.build_price_chart_svg(str(data["ticker"]), period="1mo", interval="1d")
-                        components.html(svg, height=300, scrolling=False)
-                    except (StockDataError, Exception) as exc:
-                        st.json(data)
-                else:
-                    st.json(data)
 
         if formatted.get("suggestion"):
             st.markdown("**Suggestion**")
