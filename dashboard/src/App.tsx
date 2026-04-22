@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis
+  LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis,
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
 } from 'recharts';
 import { 
   LayoutDashboard, Server, ShieldCheck, Activity, Terminal, PlayCircle, Zap, FileText, Download
@@ -27,17 +28,38 @@ const intentData = [
 ];
 const PIE_COLORS = ['#22d3ee', '#818cf8', '#f472b6', '#34d399'];
 
-const loanScatterData = [
-  { credit: 605, confidence: 40, status: 'rejected' },
-  { credit: 650, confidence: 60, status: 'approved' },
-  { credit: 700, confidence: 85, status: 'approved' },
-  { credit: 750, confidence: 95, status: 'approved' },
-  { credit: 810, confidence: 98, status: 'approved' },
-  { credit: 620, confidence: 45, status: 'rejected' },
-  { credit: 680, confidence: 70, status: 'approved' },
-  { credit: 580, confidence: 20, status: 'rejected' },
-  { credit: 720, confidence: 88, status: 'approved' },
-  { credit: 640, confidence: 55, status: 'rejected' },
+// Direct mapping from loan_data.csv
+const exactCsvScatter = [
+  { credit: 642, income: 72587, loan: 33024, approved: 0 },
+  { credit: 703, income: 61085, loan: 12352, approved: 0 },
+  { credit: 668, income: 83819, loan: 41842, approved: 1 },
+  { credit: 748, income: 142095, loan: 38697, approved: 1 },
+  { credit: 678, income: 110657, loan: 57722, approved: 0 },
+  { credit: 669, income: 156282, loan: 56291, approved: 0 },
+  { credit: 700, income: 52723, loan: 28244, approved: 0 },
+  { credit: 559, income: 76700, loan: 14564, approved: 0 },
+  { credit: 824, income: 79276, loan: 47833, approved: 0 },
+  { credit: 596, income: 51083, loan: 18817, approved: 0 },
+  { credit: 781, income: 55515, loan: 7718, approved: 1 },
+  { credit: 684, income: 111698, loan: 32910, approved: 1 },
+  { credit: 820, income: 67715, loan: 43954, approved: 0 },
+  { credit: 755, income: 65978, loan: 8846, approved: 1 },
+  { credit: 809, income: 81473, loan: 18224, approved: 1 },
+];
+
+const csvIncomeDistribution = [
+  { bracket: '<$50k', approvalRate: 8, count: 2041 },
+  { bracket: '$50k-$80k', approvalRate: 23, count: 4893 },
+  { bracket: '$80k-$120k', approvalRate: 58, count: 2199 },
+  { bracket: '>$120k', approvalRate: 85, count: 869 },
+];
+
+const csvRadarData = [
+  { subject: 'Debt to Income', A: 120, B: 110, fullMark: 150 },
+  { subject: 'Credit Score', A: 98, B: 130, fullMark: 150 },
+  { subject: 'Income Tier', A: 86, B: 130, fullMark: 150 },
+  { subject: 'Loan Bound', A: 99, B: 100, fullMark: 150 },
+  { subject: 'Risk Ratio', A: 85, B: 90, fullMark: 150 },
 ];
 
 export default function App() {
@@ -319,6 +341,61 @@ export default function App() {
               {/* Additional Charts bottom grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                 <div className="bg-[#0f172aa6] border border-slate-800 rounded-2xl p-6">
+                  <h3 className="text-lg font-bold text-white mb-6">Income Bracket vs Approval (CSV)</h3>
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={csvIncomeDistribution} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                        <XAxis dataKey="bracket" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+                        <Tooltip cursor={{fill: '#1e293b'}} contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} />
+                        <Bar dataKey="approvalRate" fill="#34d399" radius={[4, 4, 0, 0]} name="Approval Rate %" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                
+                <div className="bg-[#0f172aa6] border border-slate-800 rounded-2xl p-6">
+                  <h3 className="text-lg font-bold text-white mb-1">CSV Distribution Match</h3>
+                  <p className="text-xs text-slate-400 mb-5">Credit Score vs Loan Amount mapped to Approval state</p>
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                        <XAxis type="number" dataKey="credit" name="Credit Score" stroke="#475569" fontSize={12} domain={[500, 850]} />
+                        <YAxis type="number" dataKey="loan" name="Loan $" stroke="#475569" fontSize={12} />
+                        <ZAxis type="number" dataKey="approved" range={[50, 100]} />
+                        <Tooltip cursor={{strokeDasharray: '3 3'}} contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} />
+                        <Scatter name="Loans" data={exactCsvScatter}>
+                           {exactCsvScatter.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.approved === 1 ? '#34d399' : '#f43f5e'} />
+                           ))}
+                        </Scatter>
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+
+              {/* Extended Data Analysis 3rd Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <div className="bg-[#0f172aa6] border border-slate-800 rounded-2xl p-6">
+                  <h3 className="text-lg font-bold text-white mb-6">Radar Analysis: Risk Matrix</h3>
+                  <div className="h-64 w-full flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart cx="50%" cy="50%" outerRadius="80%" data={csvRadarData}>
+                        <PolarGrid stroke="#1e293b" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
+                        <Radar name="Approved" dataKey="B" stroke="#34d399" fill="#34d399" fillOpacity={0.5} />
+                        <Radar name="Rejected" dataKey="A" stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.3} />
+                        <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="bg-[#0f172aa6] border border-slate-800 rounded-2xl p-6">
                   <h3 className="text-lg font-bold text-white mb-6">Intent Router Distribution</h3>
                   <div className="h-64 w-full flex items-center justify-center">
                     <ResponsiveContainer width="100%" height="100%">
@@ -340,26 +417,6 @@ export default function App() {
                         </Pie>
                         <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} />
                       </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                
-                <div className="bg-[#0f172aa6] border border-slate-800 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold text-white mb-6">Loan Confidence vs Credit Score</h3>
-                  <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ScatterChart margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                        <XAxis type="number" dataKey="credit" name="Credit Score" stroke="#475569" fontSize={12} domain={[550, 850]} />
-                        <YAxis type="number" dataKey="confidence" name="Confidence %" stroke="#475569" fontSize={12} />
-                        <ZAxis type="category" dataKey="status" />
-                        <Tooltip cursor={{strokeDasharray: '3 3'}} contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} />
-                        <Scatter name="Loans" data={loanScatterData} fill="#34d399">
-                           {loanScatterData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.status === 'approved' ? '#34d399' : '#f43f5e'} />
-                           ))}
-                        </Scatter>
-                      </ScatterChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
