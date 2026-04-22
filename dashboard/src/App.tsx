@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, AreaChart, Area
+  LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis
 } from 'recharts';
 import { 
   LayoutDashboard, Server, ShieldCheck, Activity, Terminal, PlayCircle, Zap, FileText, Download
@@ -20,17 +20,62 @@ const mockMetrics = [
   { name: 'Jun', requests: 9000, accuracy: 94 },
 ];
 
-const mockStockData = [
-  { time: '09:30', price: 150.2 },
-  { time: '11:00', price: 153.1 },
-  { time: '13:00', price: 152.8 },
-  { time: '14:30', price: 156.4 },
-  { time: '16:00', price: 157.9 },
+const intentData = [
+  { name: 'Stocks', value: 45 },
+  { name: 'Loans', value: 30 },
+  { name: 'Calculators', value: 15 },
+  { name: 'General', value: 10 },
+];
+const PIE_COLORS = ['#22d3ee', '#818cf8', '#f472b6', '#34d399'];
+
+const loanScatterData = [
+  { credit: 605, confidence: 40, status: 'rejected' },
+  { credit: 650, confidence: 60, status: 'approved' },
+  { credit: 700, confidence: 85, status: 'approved' },
+  { credit: 750, confidence: 95, status: 'approved' },
+  { credit: 810, confidence: 98, status: 'approved' },
+  { credit: 620, confidence: 45, status: 'rejected' },
+  { credit: 680, confidence: 70, status: 'approved' },
+  { credit: 580, confidence: 20, status: 'rejected' },
+  { credit: 720, confidence: 88, status: 'approved' },
+  { credit: 640, confidence: 55, status: 'rejected' },
 ];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('overview');
   const [chartType, setChartType] = useState('Area');
+  
+  // Real-time ticking state for the Stock Endpoint
+  const [liveStock, setLiveStock] = useState([
+    { time: '14:25', price: 156.40 },
+    { time: '14:26', price: 156.55 },
+    { time: '14:27', price: 156.45 },
+    { time: '14:28', price: 156.70 },
+    { time: '14:29', price: 156.90 },
+  ]);
+
+  useEffect(() => {
+    // Simulating live ticking market feed for the frontend
+    const interval = setInterval(() => {
+      setLiveStock(current => {
+        const last = current[current.length - 1];
+        const rawTime = last.time.split(':');
+        let m = parseInt(rawTime[1]) + 1;
+        let h = parseInt(rawTime[0]);
+        if (m >= 60) { m = 0; h += 1; }
+        const nextTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        // Random price fluctuation between -0.50 and +0.60
+        const change = (Math.random() * 1.1) - 0.5;
+        const nextPrice = parseFloat((last.price + change).toFixed(2));
+        
+        const nextState = [...current, { time: nextTime, price: nextPrice }];
+        // Keep only the last 15 ticks for cleanliness
+        if (nextState.length > 15) nextState.shift();
+        return nextState;
+      });
+    }, 3000); // Ticks every 3 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   const handleExportPDF = async () => {
     const element = document.getElementById('dashboard-canvas');
@@ -49,7 +94,6 @@ export default function App() {
     if (!element) return;
     const canvas = await html2canvas(element, { scale: 1, backgroundColor: '#0a0a0f' });
     const imgData = canvas.toDataURL('image/png');
-    // Transform data URL to Uint8Array for docx
     const res = await fetch(imgData);
     const blob = await res.blob();
     const arrayBuffer = await blob.arrayBuffer();
@@ -80,16 +124,16 @@ export default function App() {
         <AreaChart data={data}>
           {isGradient && (
             <defs>
-              <linearGradient id="colorGrad" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={`${dataKey}Grad`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={strokeColor} stopOpacity={0.8}/>
                 <stop offset="95%" stopColor={strokeColor} stopOpacity={0}/>
               </linearGradient>
             </defs>
           )}
-          <XAxis dataKey="name" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
-          <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+          <XAxis dataKey={data[0]?.name ? "name" : "time"} stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+          <YAxis stroke="#475569" domain={['auto', 'auto']} fontSize={12} tickLine={false} axisLine={false} />
           <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} />
-          <Area type="monotone" dataKey={dataKey} stroke={strokeColor} strokeWidth={3} fillOpacity={isGradient ? 1 : 0.3} fill={isGradient ? "url(#colorGrad)" : strokeColor} />
+          <Area type="monotone" dataKey={dataKey} stroke={strokeColor} strokeWidth={3} fillOpacity={isGradient ? 1 : 0.3} fill={isGradient ? `url(#${dataKey}Grad)` : strokeColor} isAnimationActive={false} />
         </AreaChart>
       );
     }
@@ -97,20 +141,20 @@ export default function App() {
       return (
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-          <XAxis dataKey="name" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
-          <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+          <XAxis dataKey={data[0]?.name ? "name" : "time"} stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+          <YAxis stroke="#475569" domain={['auto', 'auto']} fontSize={12} tickLine={false} axisLine={false} />
           <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} cursor={{fill: '#1e293b'}} />
-          <Bar dataKey={dataKey} fill={strokeColor} radius={[4, 4, 0, 0]} />
+          <Bar dataKey={dataKey} fill={strokeColor} radius={[4, 4, 0, 0]} isAnimationActive={false} />
         </BarChart>
       );
     }
     return (
       <LineChart data={data}>
         <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-        <XAxis dataKey={data[0]?.name ? Object.keys(data[0])[0] : "time"} stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
-        <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+        <XAxis dataKey={data[0]?.name ? "name" : "time"} stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+        <YAxis stroke="#475569" domain={['auto', 'auto']} fontSize={12} tickLine={false} axisLine={false} />
         <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} />
-        <Line type="monotone" dataKey={dataKey} stroke={strokeColor} strokeWidth={3} dot={{ fill: strokeColor, strokeWidth: 2 }} activeDot={{ r: 8 }} />
+        <Line type="monotone" dataKey={dataKey} stroke={strokeColor} strokeWidth={3} dot={{ fill: strokeColor, strokeWidth: 2 }} activeDot={{ r: 8 }} isAnimationActive={false} />
       </LineChart>
     );
   };
@@ -230,7 +274,7 @@ export default function App() {
                 ))}
               </div>
 
-              {/* Charts grid */}
+              {/* Main Charts top grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
                 <div className="bg-[#0f172aa6] border border-slate-800 rounded-2xl p-6">
                   <h3 className="text-lg font-bold text-white mb-6">Traffic Volume (Conversations)</h3>
@@ -242,10 +286,65 @@ export default function App() {
                 </div>
                 
                 <div className="bg-[#0f172aa6] border border-slate-800 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold text-white mb-6">Live Stock Endpoint Ping (AAPL)</h3>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-bold text-white">Live Stock Feed (AAPL)</h3>
+                    <div className="flex items-center gap-2">
+                       <span className="animate-pulse bg-red-500 rounded-full h-2 w-2"></span>
+                       <span className="text-xs text-red-500 font-semibold tracking-wider">LIVE</span>
+                    </div>
+                  </div>
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      {renderSelectedChart(mockStockData, "price", "#818cf8", false)}
+                      {renderSelectedChart(liveStock, "price", "#818cf8", false)}
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Charts bottom grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <div className="bg-[#0f172aa6] border border-slate-800 rounded-2xl p-6">
+                  <h3 className="text-lg font-bold text-white mb-6">Intent Router Distribution</h3>
+                  <div className="h-64 w-full flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={intentData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={90}
+                          innerRadius={60}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => percent ? `${name} ${(percent * 100).toFixed(0)}%` : name}
+                        >
+                          {intentData.map((_entry, index) => (
+                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                
+                <div className="bg-[#0f172aa6] border border-slate-800 rounded-2xl p-6">
+                  <h3 className="text-lg font-bold text-white mb-6">Loan Confidence vs Credit Score</h3>
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                        <XAxis type="number" dataKey="credit" name="Credit Score" stroke="#475569" fontSize={12} domain={[550, 850]} />
+                        <YAxis type="number" dataKey="confidence" name="Confidence %" stroke="#475569" fontSize={12} />
+                        <ZAxis type="category" dataKey="status" />
+                        <Tooltip cursor={{strokeDasharray: '3 3'}} contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} />
+                        <Scatter name="Loans" data={loanScatterData} fill="#34d399">
+                           {loanScatterData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.status === 'approved' ? '#34d399' : '#f43f5e'} />
+                           ))}
+                        </Scatter>
+                      </ScatterChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
