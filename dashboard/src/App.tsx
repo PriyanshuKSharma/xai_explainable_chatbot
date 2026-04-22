@@ -4,7 +4,7 @@ import {
   LineChart, Line, AreaChart, Area
 } from 'recharts';
 import { 
-  LayoutDashboard, Server, ShieldCheck, Activity, Terminal, Code2, PlayCircle, Zap, FileText, Download
+  LayoutDashboard, Server, ShieldCheck, Activity, Terminal, PlayCircle, Zap, FileText, Download
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -62,8 +62,9 @@ export default function App() {
             children: [
               new ImageRun({
                 data: arrayBuffer,
-                transformation: { width: 600, height: (canvas.height * 600) / canvas.width }
-              })
+                transformation: { width: 600, height: (canvas.height * 600) / canvas.width },
+                type: 'png'
+              } as any)
             ]
           })
         ]
