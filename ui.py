@@ -12,7 +12,10 @@ import streamlit.components.v1 as components
 from urllib.parse import urljoin, urlparse
 from dotenv import load_dotenv
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent
+env_path = BASE_DIR / ".env"
+load_dotenv(env_path, override=True)
+print(f"DEBUG: Loaded env from {env_path}, GROQ: {bool(os.getenv('GROQ_API_KEY'))}")
 
 from financial_xai.engine import FinancialAssistantEngine
 from financial_xai.schemas import ChatRequest
