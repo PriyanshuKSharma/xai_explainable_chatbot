@@ -4,8 +4,12 @@ import {
   LineChart, Line, AreaChart, Area
 } from 'recharts';
 import { 
-  LayoutDashboard, Server, ShieldCheck, Activity, Terminal, Code2, PlayCircle, Zap
+  LayoutDashboard, Server, ShieldCheck, Activity, Terminal, Code2, PlayCircle, Zap, FileText, Download
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { Document, Packer, Paragraph, ImageRun } from 'docx';
+import { saveAs } from 'file-saver';
 
 const mockMetrics = [
   { name: 'Jan', requests: 4000, accuracy: 84 },
@@ -26,6 +30,89 @@ const mockStockData = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [chartType, setChartType] = useState('Area');
+
+  const handleExportPDF = async () => {
+    const element = document.getElementById('dashboard-canvas');
+    if (!element) return;
+    const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#0a0a0f' });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('l', 'pt', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save('XAI_Analytics_Report.pdf');
+  };
+
+  const handleExportDOCX = async () => {
+    const element = document.getElementById('dashboard-canvas');
+    if (!element) return;
+    const canvas = await html2canvas(element, { scale: 1, backgroundColor: '#0a0a0f' });
+    const imgData = canvas.toDataURL('image/png');
+    // Transform data URL to Uint8Array for docx
+    const res = await fetch(imgData);
+    const blob = await res.blob();
+    const arrayBuffer = await blob.arrayBuffer();
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({
+            children: [
+              new ImageRun({
+                data: arrayBuffer,
+                transformation: { width: 600, height: (canvas.height * 600) / canvas.width }
+              })
+            ]
+          })
+        ]
+      }]
+    });
+    const docBlob = await Packer.toBlob(doc);
+    saveAs(docBlob, 'XAI_Analytics_Report.docx');
+  };
+
+  const renderSelectedChart = (data: any, dataKey: string, strokeColor: string, isGradient: boolean) => {
+    if (chartType === 'Area') {
+      return (
+        <AreaChart data={data}>
+          {isGradient && (
+            <defs>
+              <linearGradient id="colorGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={strokeColor} stopOpacity={0.8}/>
+                <stop offset="95%" stopColor={strokeColor} stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+          )}
+          <XAxis dataKey="name" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+          <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+          <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} />
+          <Area type="monotone" dataKey={dataKey} stroke={strokeColor} strokeWidth={3} fillOpacity={isGradient ? 1 : 0.3} fill={isGradient ? "url(#colorGrad)" : strokeColor} />
+        </AreaChart>
+      );
+    }
+    if (chartType === 'Bar') {
+      return (
+        <BarChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+          <XAxis dataKey="name" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+          <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+          <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} cursor={{fill: '#1e293b'}} />
+          <Bar dataKey={dataKey} fill={strokeColor} radius={[4, 4, 0, 0]} />
+        </BarChart>
+      );
+    }
+    return (
+      <LineChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+        <XAxis dataKey={data[0]?.name ? Object.keys(data[0])[0] : "time"} stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+        <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+        <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} />
+        <Line type="monotone" dataKey={dataKey} stroke={strokeColor} strokeWidth={3} dot={{ fill: strokeColor, strokeWidth: 2 }} activeDot={{ r: 8 }} />
+      </LineChart>
+    );
+  };
 
   return (
     <div className="flex h-screen bg-black text-slate-200 font-sans overflow-hidden">
@@ -81,25 +168,44 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-y-auto">
         {/* Top Navbar */}
-        <header className="h-20 border-b border-slate-800 flex items-center justify-between px-8 bg-black/50 backdrop-blur-xl sticky top-0 z-10">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-white capitalize">{activeTab} Metrics</h2>
-            <p className="text-sm text-slate-400">Live operational telemetry mapped in real-time.</p>
+        <header className="h-20 border-b border-slate-800 flex items-center justify-between px-8 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
+          <div className="flex items-center gap-6">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight text-white capitalize">{activeTab} Metrics</h2>
+              <p className="text-sm text-slate-400">Live operational telemetry mapped in real-time.</p>
+            </div>
+            <div className="flex items-center gap-2 ml-4">
+               <span className="text-xs font-medium text-slate-500">Chart Type:</span>
+               <select 
+                 className="bg-slate-800 border border-slate-700 text-sm rounded-lg px-3 py-1.5 outline-none focus:border-cyan-500 text-slate-300"
+                 value={chartType}
+                 onChange={(e) => setChartType(e.target.value)}
+               >
+                 <option value="Area">Area Fill</option>
+                 <option value="Line">Line</option>
+                 <option value="Bar">Bar</option>
+               </select>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <a href="https://github.com/PriyanshuKSharma/xai_explainable_chatbot" target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium transition-colors border border-white/10">
-              <Code2 className="w-4 h-4" />
-              Source Code
-            </a>
+          <div className="flex items-center gap-3">
+            <button onClick={handleExportDOCX} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg text-sm font-medium transition-colors border border-blue-500/20">
+              <FileText className="w-4 h-4" />
+              DOCX
+            </button>
+            <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-red-400 rounded-lg text-sm font-medium transition-colors border border-red-500/20">
+              <Download className="w-4 h-4" />
+              PDF
+            </button>
+            <div className="h-6 w-px bg-slate-800 mx-2"></div>
             <a href="https://nyayafinanceai.streamlit.app/" target="_blank" rel="noreferrer" className="flex items-center gap-2 px-5 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm font-semibold transition-all shadow-[0_0_15px_rgba(34,211,238,0.4)] text-white">
               <PlayCircle className="w-4 h-4" />
-              Launch App
+              App
             </a>
           </div>
         </header>
 
-        {/* Dashboard Canvas */}
-        <div className="p-8">
+        {/* Dashboard Canvas wrapped for HTMl2Canvas Exports */}
+        <div id="dashboard-canvas" className="p-8 pb-32">
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Stat Grid */}
@@ -129,18 +235,7 @@ export default function App() {
                   <h3 className="text-lg font-bold text-white mb-6">Traffic Volume (Conversations)</h3>
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={mockMetrics}>
-                        <defs>
-                          <linearGradient id="colorReq" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.8}/>
-                            <stop offset="95%" stopColor="#22d3ee" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <XAxis dataKey="name" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
-                        <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} />
-                        <Area type="monotone" dataKey="requests" stroke="#22d3ee" strokeWidth={3} fillOpacity={1} fill="url(#colorReq)" />
-                      </AreaChart>
+                      {renderSelectedChart(mockMetrics, "requests", "#22d3ee", true)}
                     </ResponsiveContainer>
                   </div>
                 </div>
@@ -149,13 +244,7 @@ export default function App() {
                   <h3 className="text-lg font-bold text-white mb-6">Live Stock Endpoint Ping (AAPL)</h3>
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={mockStockData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                        <XAxis dataKey="time" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#475569" domain={['auto', 'auto']} fontSize={12} tickLine={false} axisLine={false} />
-                        <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} />
-                        <Line type="monotone" dataKey="price" stroke="#818cf8" strokeWidth={3} dot={{ fill: '#818cf8', strokeWidth: 2 }} activeDot={{ r: 8 }} />
-                      </LineChart>
+                      {renderSelectedChart(mockStockData, "price", "#818cf8", false)}
                     </ResponsiveContainer>
                   </div>
                 </div>
@@ -210,13 +299,7 @@ export default function App() {
                  <h3 className="text-lg font-bold text-white mb-6">Model Prediction Confidence Trend</h3>
                  <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={mockMetrics}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                        <XAxis dataKey="name" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#475569" domain={[70, 100]} fontSize={12} tickLine={false} axisLine={false} />
-                        <Tooltip contentStyle={{backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff'}} cursor={{fill: '#1e293b'}} />
-                        <Bar dataKey="accuracy" fill="#818cf8" radius={[4, 4, 0, 0]} />
-                      </BarChart>
+                      {renderSelectedChart(mockMetrics, "accuracy", "#f472b6", false)}
                     </ResponsiveContainer>
                  </div>
               </div>
