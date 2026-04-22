@@ -91,10 +91,18 @@ def detect_intent(message: str, state: ConversationState | None = None) -> Finan
         if best_score <= 1 or best_intent == state.active_intent:
             return state.active_intent
 
-    # Only treat as a ticker-based stock lookup when the phrasing indicates a quote/chart request.
-    # Avoid routing definitional questions like "what is stocks" to the live market path.
-    if _find_ticker(message) and any(word in lowered for word in ("price", "quote", "ticker", "chart", "trend")):
-        return FinancialIntent.STOCK_GUIDANCE
+    # Only treat as a ticker-based stock lookup when the phrasing indicates a quote/chart request,
+    # or if the word is fully capitalized (e.g., "AAPL").
+    ticker = _find_ticker(message)
+    if ticker:
+        has_stock_word = any(word in lowered for word in ("price", "quote", "ticker", "chart", "trend", "share", "stock"))
+        # Check if the original message contains the ticker in all caps
+        # Replace common punctuation that might be attached to it
+        clean_msg = message.replace("?", "").replace(",", "").replace(".", " ")
+        is_upper = any(t == ticker for t in clean_msg.split())
+        if has_stock_word or is_upper:
+            return FinancialIntent.STOCK_GUIDANCE
+
     if any(term in lowered for term in ("compound interest", "compounding", "compund", "compound intrest")):
         return FinancialIntent.COMPOUND_INTEREST
     if any(term in lowered for term in ("simple interest", "simple intrest")):
