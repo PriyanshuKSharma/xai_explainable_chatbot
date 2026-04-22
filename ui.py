@@ -10,6 +10,9 @@ import requests
 import streamlit as st
 import streamlit.components.v1 as components
 from urllib.parse import urljoin, urlparse
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from financial_xai.engine import FinancialAssistantEngine
 from financial_xai.schemas import ChatRequest
